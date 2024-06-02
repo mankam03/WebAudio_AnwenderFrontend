@@ -1,14 +1,16 @@
+// TODO HIER SPÄTER JEWEILS DATENABFRAGE
 document.addEventListener('DOMContentLoaded', (event) => {
 
-    // TODO HIER SPÄTER JEWEILS DATENABFRAGE
     getAnwendungszweck();
     getLocation();
     watchOrientation()
 
     pois = getPois();
     pois.forEach(poi => {
-        addPOIToList(poi, false);
+        addPOIToList(poi, true);
     })
+
+    updateProgressBar()
 });
 
 function getAnwendungszweck() {
@@ -22,9 +24,10 @@ function getAnwendungszweck() {
         "Ansonsten wünschen wir Ihnen viel Spaß!"
 }
 
+// ACTIVE NICHT IN DATENBANK, ABER ZUSÄTZLICH IWIE ADDEN?
 function getPois() {
     return [{number: 1, name: "Saarbrücker Rathaus", active: false, found: true},
-        {number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: true},
+        {number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: false},
         {number: 3, name: "Landwehrplatz", active: false, found:false}
     ]
 }
@@ -37,17 +40,26 @@ function addPOIToList(poi, orderDefined) {
     if (!orderDefined) {
         label.innerHTML = `${poi.name}`;
         label.addEventListener('click', function () {
-            poi.active = !poi.active;
-            updatePOIColor(poi, label);
+            if (poi.found && !poi.active) {
+                const proceed = confirm("Dieser Point of Interest wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?");
+                if (proceed) {
+                    poi.active = !poi.active;
+                    updatePOIColor(poi, label);
+                }
+            } else {
+                poi.active = !poi.active;
+                updatePOIColor(poi, label);
+            }
         });
     } else {
         label.innerHTML = `${poi.number}&emsp;${poi.name}`;
     }
 
-    updatePOIColor(poi, label)
+    updatePOIColor(poi, label);
     li.appendChild(label);
     poiList.appendChild(li);
 }
+
 
 function updatePOIColor(poi, label) {
     if (poi.active) {
@@ -92,4 +104,14 @@ function handleOrientation(event) {
     orientationElement.innerHTML = "Alpha: " + alpha +
         "<br>Beta: " + beta +
         "<br>Gamma: " + gamma;
+}
+
+function updateProgressBar() {
+    const totalPois = pois.length;
+    const visitedPois = pois.filter(poi => poi.found).length;
+    const progress = (visitedPois / totalPois) * 100;
+
+    const progressBar = document.getElementById("progressBar");
+    progressBar.style.width = `${progress}%`;
+    progressBar.textContent = `${Math.round(progress)}%`;
 }

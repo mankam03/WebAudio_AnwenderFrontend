@@ -9,47 +9,53 @@
 </head>
 
 <body>
-    <div class="overlay" id="overlay"></div>
+<div class="overlay" id="overlay"></div>
 
-    <!-- Erstes Popup für Login -->
-    <div class="popup" id="loginPopup">
-        <h2>Mit Account fortfahren?</h2>
-        <p>Mit einem Account kann der Fortschritt gespeichert werden.</p>
-        <button onclick="continueAsGuest()">Als Gast fortfahren</button>
-        <button onclick="showLoginForm()">Anmelden</button>
-    </div>
+<!-- Erstes Popup für Login -->
+<div class="popup" id="loginPopup">
+    <h2>Mit Account fortfahren?</h2>
+    <p>Mit einem Account kann der Fortschritt gespeichert werden.</p>
+    <button onclick="continueAsGuest()">Als Gast fortfahren</button>
+    <button onclick="showLoginForm()">Anmelden</button>
+</div>
 
-    <!-- Zweites Popup für Anmelden/Registrieren -->
-    <div class="popup" id="authPopup">
-        <h2>Anmelden</h2>
-        <form id="loginForm">
-            <input type="text" id="loginUsername" placeholder="Benutzername" required>
-            <input type="password" id="loginPassword" placeholder="Passwort" required>
-            <button type="submit">Anmelden</button>
-        </form>
-        <p>Noch keinen Account? <button type="button" onclick="showRegisterForm()">Registrieren</button></p>
-    </div>
+<!-- Zweites Popup für Anmelden/Registrieren -->
+<div class="popup" id="authPopup">
+    <span class="close" onclick="showInitialPopup()">&times;</span>
+    <h2>Anmelden</h2>
+    <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Benutzername" required>
+        <input type="password" id="loginPassword" placeholder="Passwort" required>
+        <button type="submit">Anmelden</button>
+    </form>
+    <p>Noch keinen Account? <button type="button" onclick="showRegisterForm()">Registrieren</button></p>
+</div>
 
-    <!-- Registrierungsformular -->
-    <div class="popup" id="registerPopup">
-        <h2>Registrieren</h2>
-        <form id="registerForm">
-            <input type="text" id="registerUsername" placeholder="Benutzername" required>
-            <input type="password" id="registerPassword" placeholder="Passwort" required>
-            <input type="password" id="confirmPassword" placeholder="Passwort bestätigen" required>
-            <button type="submit">Registrieren</button>
-        </form>
-        <p>Bereits registriert? <button type="button" onclick="showLoginForm()">Anmelden</button></p>
-    </div>
+<!-- Registrierungsformular -->
+<div class="popup" id="registerPopup">
+    <span class="close" onclick="showInitialPopup()">&times;</span>
+    <h2>Registrieren</h2>
+    <form id="registerForm">
+        <input type="text" id="registerUsername" placeholder="Benutzername" required>
+        <input type="password" id="registerPassword" placeholder="Passwort" required>
+        <input type="password" id="confirmPassword" placeholder="Passwort bestätigen" required>
+        <button type="submit">Registrieren</button>
+    </form>
+    <p>Bereits registriert? <button type="button" onclick="showLoginForm()">Anmelden</button></p>
+</div>
 
-    <h1 id="titelAnwendungszweck"></h1>
-    <p id="beschreibungAnwendungszweck"></p>
-    <p id="gps">Lade GPS-Daten...</p>
-    <p id="orientation">Lade Orientation-Daten...</p>
+<h1 id="titelAnwendungszweck"></h1>
+<p id="beschreibungAnwendungszweck"></p>
+<p id="gps">Lade GPS-Daten...</p>
+<p id="orientation">Lade Orientation-Daten...</p>
 
-    <ul id="poiList"></ul>
+<ul id="poiList"></ul>
 
-    <script src="src/main/Login.js"></script>
-    <script src="src/main/Main.js"></script>
+<div id="progressContainer">
+    <div id="progressBar">0%</div>
+</div>
+
+<script src="src/main/Login.js"></script>
+<script src="src/main/Main.js"></script>
 </body>
 </html>

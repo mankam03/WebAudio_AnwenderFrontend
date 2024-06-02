@@ -24,12 +24,12 @@ document.getElementById('registerForm').addEventListener('submit', function (eve
     const confirmPassword = document.getElementById('confirmPassword').value;
 
     if (password !== confirmPassword) {
-        alert("Passwörter stimmen nicht überein.")
+        alert("Passwörter stimmen nicht überein.");
     } else {
         // TODO HIER DATENBANKABFRAGE, OB NAME NICHT SCHON VERGEBEN UND PASSWORT "OKAY"
         console.log('Register:', {username, password, confirmPassword});
         // TODO WENN JA, ALLE POPUPS SCHLIEßEN
-        closeAllPopUps()
+        closeAllPopUps();
     }
 });
 
@@ -38,14 +38,14 @@ document.getElementById('registerForm').addEventListener('submit', function (eve
  * aufrufen kann, ohne sich angemeldet zu haben.
  */
 function continueAsGuest() {
-    closeAllPopUps(false)
+    closeAllPopUps(false);
 }
 
 /**
  * Zeigt das Login-Popup.
  */
 function showLoginForm() {
-    closeAllPopUps(true)
+    closeAllPopUps(true);
     document.getElementById('authPopup').style.display = 'block';
 }
 
@@ -53,8 +53,16 @@ function showLoginForm() {
  * Zeigt das Register-Popup.
  */
 function showRegisterForm() {
-    closeAllPopUps(true)
+    closeAllPopUps(true);
     document.getElementById('registerPopup').style.display = 'block';
+}
+
+/**
+ * Zeigt das Initial-Popup.
+ */
+function showInitialPopup() {
+    closeAllPopUps(true);
+    document.getElementById('loginPopup').style.display = 'block';
 }
 
 /**
