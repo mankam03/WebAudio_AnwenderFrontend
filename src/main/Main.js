@@ -1,16 +1,18 @@
-// TODO HIER SPÄTER JEWEILS DATENABFRAGE
-document.addEventListener('DOMContentLoaded', (event) => {
+let pois = [];
+let map;
+let activeMapContainer = null;
+let activeCircle = null;
 
+document.addEventListener('DOMContentLoaded', (event) => {
     getAnwendungszweck();
     getLocation();
-    watchOrientation()
 
     pois = getPois();
     pois.forEach(poi => {
-        addPOIToList(poi, true);
-    })
+        addPOIToList(poi, false);
+    });
 
-    updateProgressBar()
+    updateProgressBar();
 });
 
 function getAnwendungszweck() {
@@ -20,16 +22,16 @@ function getAnwendungszweck() {
     const beschreibungAnwendungszweckElement = document.getElementById("beschreibungAnwendungszweck");
     beschreibungAnwendungszweckElement.innerHTML = "Herzlich Willkommen in Saarbrücken! " +
         "Entdecken Sie mit dieser Liste die schönsten Flecken, die Saarbrücken zu bieten hat.<br>" +
-        "Ihr Anpsrechpartner: 0173-727328<br>" +
-        "Ansonsten wünschen wir Ihnen viel Spaß!"
+        "Ihr Ansprechpartner: 0173-727328<br>" +
+        "Ansonsten wünschen wir Ihnen viel Spaß!";
 }
 
-// ACTIVE NICHT IN DATENBANK, ABER ZUSÄTZLICH IWIE ADDEN?
 function getPois() {
-    return [{number: 1, name: "Saarbrücker Rathaus", active: false, found: true},
-        {number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: false},
-        {number: 3, name: "Landwehrplatz", active: false, found:false}
-    ]
+    return [
+        { number: 1, name: "Saarbrücker Rathaus", active: false, found: true, coordinates: [49.233, 7.0] },
+        { number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: false, coordinates: [49.240, 6.99] },
+        { number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.231, 7.01] }
+    ];
 }
 
 function addPOIToList(poi, orderDefined) {
@@ -50,6 +52,34 @@ function addPOIToList(poi, orderDefined) {
                 poi.active = !poi.active;
                 updatePOIColor(poi, label);
             }
+
+            // Zeige Karte und aktualisiere sie, wenn ein POI ausgewählt wird
+            if (poi.active) {
+                if (activeMapContainer) {
+                    activeMapContainer.remove();
+                }
+
+                const mapContainer = document.createElement('div');
+                mapContainer.className = 'map-container';
+                mapContainer.style.display = 'block';
+                li.appendChild(mapContainer);
+                activeMapContainer = mapContainer;
+
+                initializeMap(mapContainer, poi.coordinates);
+
+                // Zeichne den Kreis um den POI
+                const randomizedCoordinates = getRandomizedCoordinates(poi.coordinates, 500);
+                drawCircle(randomizedCoordinates, 500); // 500 Meter Radius
+            } else {
+                if (activeMapContainer) {
+                    activeMapContainer.style.display = 'none';
+                }
+
+                // Entferne den Kreis, wenn der POI abgewählt wird
+                if (activeCircle) {
+                    map.removeLayer(activeCircle);
+                }
+            }
         });
     } else {
         label.innerHTML = `${poi.number}&emsp;${poi.name}`;
@@ -60,18 +90,60 @@ function addPOIToList(poi, orderDefined) {
     poiList.appendChild(li);
 }
 
+function initializeMap(container, coordinates) {
+    // Initialisieren der Leaflet-Karte
+    map = L.map(container).setView(coordinates, 15); // Koordinaten des POI und Zoom-Stufe
+
+    // Hinzufügen der CartoDB Positron No Labels-Tiles
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
+        maxZoom: 18
+    }).addTo(map);
+}
+
+function drawCircle(coordinates, radius) {
+    // Entferne den vorherigen Kreis, falls vorhanden
+    if (activeCircle) {
+        map.removeLayer(activeCircle);
+    }
+
+    // Zeichne den neuen Kreis
+    activeCircle = L.circle(coordinates, {
+        color: 'blue',
+        fillColor: '#30f',
+        fillOpacity: 0.2,
+        radius: radius
+    }).addTo(map);
+}
+
+function getRandomizedCoordinates(center, maxDistance) {
+    // Zufällige Richtung und Entfernung innerhalb des Radius
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = Math.random() * maxDistance;
+
+    // Konvertiere die Entfernung von Metern zu Grad (etwa)
+    const earthRadius = 6371000; // Erdradius in Metern
+    const dLat = distance / earthRadius;
+    const dLng = distance / (earthRadius * Math.cos(Math.PI * center[0] / 180));
+
+    // Zufällige Koordinaten berechnen
+    const newLat = center[0] + dLat * (180 / Math.PI) * Math.sin(angle);
+    const newLng = center[1] + dLng * (180 / Math.PI) * Math.cos(angle);
+
+    return [newLat, newLng];
+}
 
 function updatePOIColor(poi, label) {
     if (poi.active) {
-        label.style.color = "blue"
+        label.style.color = "blue";
     } else if (poi.found) {
-        label.style.color = "green"
+        label.style.color = "green";
     } else {
-        label.style.color = "red"
+        label.style.color = "red";
     }
 }
 
-const gpsElement = document.getElementById("gps")
+const gpsElement = document.getElementById("gps");
 
 function getLocation() {
     if (navigator.geolocation) {
@@ -82,28 +154,8 @@ function getLocation() {
 }
 
 function showPosition(position) {
-    gpsElement.innerHTML="Latitude: " + position.coords.latitude +
+    gpsElement.innerHTML = "Latitude: " + position.coords.latitude +
         "<br>Longitude: " + position.coords.longitude;
-}
-
-function watchOrientation() {
-    if (window.DeviceOrientationEvent) {
-        window.addEventListener('deviceorientation', handleOrientation);
-    } else {
-        const orientationElement = document.getElementById('orientation');
-        orientationElement.innerHTML = "DeviceOrientation API wird von diesem Gerät nicht unterstützt.";
-    }
-}
-
-function handleOrientation(event) {
-    const orientationElement = document.getElementById('orientation');
-    const alpha = event.alpha; // Rotation um die Z-Achse (0 bis 360 Grad)
-    const beta = event.beta; // Neigung um die X-Achse (-180 bis 180 Grad)
-    const gamma = event.gamma; // Neigung um die Y-Achse (-90 bis 90 Grad)
-
-    orientationElement.innerHTML = "Alpha: " + alpha +
-        "<br>Beta: " + beta +
-        "<br>Gamma: " + gamma;
 }
 
 function updateProgressBar() {

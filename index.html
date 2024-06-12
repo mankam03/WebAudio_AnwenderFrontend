@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anwendungszweck</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        .map-container {
+            display: none; /* Standardmäßig ausblenden */
+            height: 400px;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 
 <body>
@@ -46,9 +57,8 @@
 
 <h1 id="titelAnwendungszweck"></h1>
 <p id="beschreibungAnwendungszweck"></p>
-<p id="gps">Lade GPS-Daten...</p>
-<p id="orientation">Lade Orientation-Daten...</p>
 
+<p id="gps">Lade GPS-Daten...</p>
 <ul id="poiList"></ul>
 
 <div id="progressContainer">
