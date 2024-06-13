@@ -3,6 +3,7 @@ let map;
 let userPosition = null;
 let userMarker = null;
 let poiCircles = {};
+let orderDefined = false;
 
 document.addEventListener('DOMContentLoaded', (event) => {
     getAnwendungszweck();
@@ -11,10 +12,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     pois = getPois();
     pois.forEach(poi => {
-        addPOIToList(poi, false);
+        addPOIToList(poi, orderDefined);
     });
 
     updateProgressBar();
+
+    if (orderDefined) {
+        activateFirstUnfoundPoi();
+    }
 });
 
 function getAnwendungszweck() {
@@ -31,8 +36,12 @@ function getAnwendungszweck() {
 function getPois() {
     return [
         { number: 1, name: "Saarbrücker Rathaus", active: false, found: true, coordinates: [49.233, 7.0] },
-        { number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: false, coordinates: [49.240, 6.99] },
-        { number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.231, 7.01] }
+        { number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: true, coordinates: [49.240, 6.99] },
+        { number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.231, 7.01] },
+        { number: 4, name: "Saarbrücker Schloss", active: false, found: false, coordinates: [49.25, 6.91] },
+        { number: 5, name: "Zoo", active: false, found: false, coordinates: [49.21, 7.07] },
+        { number: 6, name: "Johanneskirche", active: false, found: false, coordinates: [49.235, 7.03] },
+        { number: 7, name: "Staatstheater", active: false, found: false, coordinates: [49.31, 6.92] }
     ];
 }
 
@@ -72,6 +81,21 @@ function addPOIToList(poi, orderDefined) {
     poiList.appendChild(li);
 }
 
+function activateFirstUnfoundPoi() {
+    for (let poi of pois) {
+        if (!poi.found) {
+            const poiList = document.getElementById('poiList');
+            const labels = poiList.getElementsByTagName('label');
+            for (let label of labels) {
+                if (label.innerHTML.includes(poi.name)) {
+                    activatePoi(poi, label);
+                    return;
+                }
+            }
+        }
+    }
+}
+
 function activatePoi(poi, label) {
     poi.active = !poi.active;
     updatePOIColor(poi, label);
@@ -79,7 +103,7 @@ function activatePoi(poi, label) {
         if (poiCircles[poi.number]) {
             map.addLayer(poiCircles[poi.number]);
         } else {
-            poiCircles[poi.number] = drawCircle(poi.coordinates, 500);
+            poiCircles[poi.number] = drawCircle(poi.coordinates, 500, poi.name);  // Pass the POI's name here
         }
     } else {
         if (poiCircles[poi.number]) {
@@ -99,14 +123,16 @@ function updatePOIColor(poi, label) {
     }
 }
 
-function drawCircle(center, radius) {
+function drawCircle(center, radius, name) {
     const randomizedCoordinates = getRandomizedCoordinates(center, radius);
-    return L.circle(randomizedCoordinates, {
+    const circle = L.circle(randomizedCoordinates, {
         color: 'blue',
         fillColor: '#30f',
         fillOpacity: 0.2,
         radius: radius
     }).addTo(map);
+    circle.bindPopup(name);  // Add this line to bind the name to the circle
+    return circle;
 }
 
 function getRandomizedCoordinates(center, radius) {
