@@ -76,6 +76,7 @@ li {
     width: 100%;
     background-color: #e0e0e0;
     border-radius: 5px;
+    margin-top: 50px;
 }
 
 #progressBar {
@@ -86,4 +87,9 @@ li {
     text-align: center;
     color: white;
     line-height: 30px;
+}
+
+#centralMap {
+    height: 300px;
+    margin: 10px;
 }

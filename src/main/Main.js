@@ -1,10 +1,13 @@
 let pois = [];
-let mapInstances = {};
+let map;
 let userPosition = null;
+let userMarker = null;
+let poiCircles = {};
 
 document.addEventListener('DOMContentLoaded', (event) => {
     getAnwendungszweck();
     getLocation();
+    initializeCentralMap();
 
     pois = getPois();
     pois.forEach(poi => {
@@ -33,6 +36,16 @@ function getPois() {
     ];
 }
 
+function initializeCentralMap() {
+    const mapContainer = document.getElementById('centralMap');
+    map = L.map(mapContainer).setView([49.233, 7.0], 13);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
+        maxZoom: 18
+    }).addTo(map);
+}
+
 function addPOIToList(poi, orderDefined) {
     const poiList = document.getElementById('poiList');
     const li = document.createElement('li');
@@ -53,36 +66,17 @@ function addPOIToList(poi, orderDefined) {
             }
 
             if (poi.active) {
-                if (mapInstances[poi.number]) {
-                    mapInstances[poi.number].container.style.display = 'block';
-                    mapInstances[poi.number].map.invalidateSize();
+                if (poiCircles[poi.number]) {
+                    map.addLayer(poiCircles[poi.number]);
                 } else {
-                    const mapContainer = document.createElement('div');
-                    mapContainer.className = 'map-container';
-                    mapContainer.style.display = 'block';
-                    li.appendChild(mapContainer);
-
-                    const map = initializeMap(mapContainer, poi.coordinates);
-
-                    const randomizedCoordinates = getRandomizedCoordinates(poi.coordinates, 500);
-                    drawCircle(map, randomizedCoordinates, 500);
-
-                    mapInstances[poi.number] = {
-                        container: mapContainer,
-                        map: map,
-                        circleCoordinates: randomizedCoordinates
-                    };
-
-                    if (userPosition) {
-                        addUserMarker(map, userPosition);
-                        adjustViewToIncludePoints(map, randomizedCoordinates, userPosition);
-                    }
+                    poiCircles[poi.number] = drawCircle(poi.coordinates, 500);
                 }
             } else {
-                if (mapInstances[poi.number]) {
-                    mapInstances[poi.number].container.style.display = 'none';
+                if (poiCircles[poi.number]) {
+                    map.removeLayer(poiCircles[poi.number]);
                 }
             }
+            adjustViewToIncludeAllCircles();
         });
     } else {
         label.innerHTML = `${poi.number}&emsp;${poi.name}`;
@@ -93,29 +87,13 @@ function addPOIToList(poi, orderDefined) {
     poiList.appendChild(li);
 }
 
-function initializeMap(container, coordinates) {
-    const map = L.map(container).setView(coordinates, 15);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 18
-    }).addTo(map);
-
-    return map;
-}
-
-function drawCircle(map, coordinates, radius) {
-    L.circle(coordinates, {
+function drawCircle(coordinates, radius) {
+    return L.circle(coordinates, {
         color: 'blue',
         fillColor: '#30f',
         fillOpacity: 0.2,
         radius: radius
     }).addTo(map);
-}
-
-function addUserMarker(map, coordinates) {
-    L.marker(coordinates).addTo(map)
-        .bindPopup('Ihre Position');
 }
 
 function getRandomizedCoordinates(center, maxDistance) {
@@ -142,34 +120,39 @@ function updatePOIColor(poi, label) {
     }
 }
 
-const gpsElement = document.getElementById("gps");
-
 function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(showPosition);
     } else {
-        gpsElement.innerHTML = "GPS-Daten können in diesem Browser nicht gelesen werden.";
+        alert("GPS-Daten können in diesem Browser nicht gelesen werden.");
     }
 }
 
 function showPosition(position) {
-    gpsElement.innerHTML = "Latitude: " + position.coords.latitude +
-        "<br>Longitude: " + position.coords.longitude;
-
     userPosition = [position.coords.latitude, position.coords.longitude];
+    if (userMarker) {
+        userMarker.setLatLng(userPosition);
+    } else {
+        userMarker = L.marker(userPosition).addTo(map).bindPopup('Ihre Position');
+    }
 
-    Object.keys(mapInstances).forEach(key => {
-        const poi = pois.find(poi => poi.number == key);
-        if (mapInstances[key].map && poi.active) {
-            addUserMarker(mapInstances[key].map, userPosition);
-            adjustViewToIncludePoints(mapInstances[key].map, mapInstances[key].circleCoordinates, userPosition);
-        }
-    });
+    adjustViewToIncludeAllCircles();
 }
 
-function adjustViewToIncludePoints(map, point1, point2) {
-    const bounds = L.latLngBounds([point1, point2]);
-    map.fitBounds(bounds);
+function adjustViewToIncludeAllCircles() {
+    const activeCircles = Object.values(poiCircles).filter(circle => map.hasLayer(circle));
+    if (activeCircles.length > 0) {
+        const bounds = L.latLngBounds(activeCircles.map(circle => circle.getLatLng()));
+        activeCircles.forEach(circle => {
+            bounds.extend(circle.getBounds());
+        });
+        if (userMarker) {
+            bounds.extend(userMarker.getLatLng());
+        }
+        map.fitBounds(bounds, { padding: [50, 50] });
+    } else if (userMarker) {
+        map.setView(userMarker.getLatLng(), 13);
+    }
 }
 
 function updateProgressBar() {
