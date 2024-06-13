@@ -1,3 +1,5 @@
+const CIRCLE_RADIUS = 500;
+
 let pois = [];
 let map;
 let userPosition = null;
@@ -103,7 +105,7 @@ function activatePoi(poi, label) {
         if (poiCircles[poi.number]) {
             map.addLayer(poiCircles[poi.number]);
         } else {
-            poiCircles[poi.number] = drawCircle(poi.coordinates, 500, poi.name);  // Pass the POI's name here
+            poiCircles[poi.number] = drawCircle(poi.coordinates,CIRCLE_RADIUS, poi.name);  // Pass the POI's name here
         }
     } else {
         if (poiCircles[poi.number]) {
