@@ -57,12 +57,10 @@ function addPOIToList(poi, orderDefined) {
             if (poi.found && !poi.active) {
                 const proceed = confirm("Dieser Point of Interest wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?");
                 if (proceed) {
-                    poi.active = !poi.active;
-                    updatePOIColor(poi, label);
+                    activatePoi(poi, label);
                 }
             } else {
-                poi.active = !poi.active;
-                updatePOIColor(poi, label);
+                activatePoi(poi, label);
             }
 
             if (poi.active) {
@@ -87,6 +85,21 @@ function addPOIToList(poi, orderDefined) {
     poiList.appendChild(li);
 }
 
+function activatePoi(poi, label) {
+    poi.active = !poi.active;
+    updatePOIColor(poi, label);
+}
+
+function updatePOIColor(poi, label) {
+    if (poi.active) {
+        label.style.color = "blue";
+    } else if (poi.found) {
+        label.style.color = "green";
+    } else {
+        label.style.color = "red";
+    }
+}
+
 function drawCircle(center, radius) {
     const randomizedCoordinates = getRandomizedCoordinates(center, radius);
     return L.circle(randomizedCoordinates, {
@@ -109,16 +122,6 @@ function getRandomizedCoordinates(center, radius) {
     const newLng = center[1] + dLng * (180 / Math.PI) * Math.cos(angle);
 
     return [newLat, newLng];
-}
-
-function updatePOIColor(poi, label) {
-    if (poi.active) {
-        label.style.color = "blue";
-    } else if (poi.found) {
-        label.style.color = "green";
-    } else {
-        label.style.color = "red";
-    }
 }
 
 function getLocation() {
