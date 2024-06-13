@@ -87,8 +87,9 @@ function addPOIToList(poi, orderDefined) {
     poiList.appendChild(li);
 }
 
-function drawCircle(coordinates, radius) {
-    return L.circle(coordinates, {
+function drawCircle(center, radius) {
+    const randomizedCoordinates = getRandomizedCoordinates(center, radius);
+    return L.circle(randomizedCoordinates, {
         color: 'blue',
         fillColor: '#30f',
         fillOpacity: 0.2,
@@ -96,9 +97,9 @@ function drawCircle(coordinates, radius) {
     }).addTo(map);
 }
 
-function getRandomizedCoordinates(center, maxDistance) {
+function getRandomizedCoordinates(center, radius) {
     const angle = Math.random() * 2 * Math.PI;
-    const distance = Math.random() * maxDistance;
+    const distance = Math.random() * radius;
 
     const earthRadius = 6371000;
     const dLat = distance / earthRadius;
