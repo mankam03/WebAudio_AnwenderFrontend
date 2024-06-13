@@ -62,19 +62,6 @@ function addPOIToList(poi, orderDefined) {
             } else {
                 activatePoi(poi, label);
             }
-
-            if (poi.active) {
-                if (poiCircles[poi.number]) {
-                    map.addLayer(poiCircles[poi.number]);
-                } else {
-                    poiCircles[poi.number] = drawCircle(poi.coordinates, 500);
-                }
-            } else {
-                if (poiCircles[poi.number]) {
-                    map.removeLayer(poiCircles[poi.number]);
-                }
-            }
-            adjustViewToIncludeAllCircles();
         });
     } else {
         label.innerHTML = `${poi.number}&emsp;${poi.name}`;
@@ -88,6 +75,18 @@ function addPOIToList(poi, orderDefined) {
 function activatePoi(poi, label) {
     poi.active = !poi.active;
     updatePOIColor(poi, label);
+    if (poi.active) {
+        if (poiCircles[poi.number]) {
+            map.addLayer(poiCircles[poi.number]);
+        } else {
+            poiCircles[poi.number] = drawCircle(poi.coordinates, 500);
+        }
+    } else {
+        if (poiCircles[poi.number]) {
+            map.removeLayer(poiCircles[poi.number]);
+        }
+    }
+    adjustViewToIncludeAllCircles();
 }
 
 function updatePOIColor(poi, label) {
