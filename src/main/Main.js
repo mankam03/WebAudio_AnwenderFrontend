@@ -129,6 +129,8 @@ function playAudio(poi) {
             const distance = getDistance(userPosition, randomCircleCenter[poi.number]) * 1000; // Convert to meters
             if (distance <= CIRCLE_RADIUS) {
                 audios[poi.number].play();
+            } else {
+                audios[poi.number].pause();
             }
         }
     }, 500); // Check every 0.5 seconds
