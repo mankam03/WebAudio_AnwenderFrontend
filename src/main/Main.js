@@ -1,4 +1,5 @@
 const CIRCLE_RADIUS = 500;
+const PROXIMITY_RADIUS = 0.005;  // Approx. 500 meters in degrees
 
 let pois = [];
 let map;
@@ -37,13 +38,13 @@ function getAnwendungszweck() {
 
 function getPois() {
     return [
-        { number: 1, name: "Saarbrücker Rathaus", active: false, found: true, coordinates: [49.233, 7.0] },
-        { number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: true, coordinates: [49.240, 6.99] },
-        { number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.231, 7.01] },
-        { number: 4, name: "Saarbrücker Schloss", active: false, found: false, coordinates: [49.25, 6.91] },
-        { number: 5, name: "Zoo", active: false, found: false, coordinates: [49.21, 7.07] },
-        { number: 6, name: "Johanneskirche", active: false, found: false, coordinates: [49.235, 7.03] },
-        { number: 7, name: "Staatstheater", active: false, found: false, coordinates: [49.31, 6.92] }
+        {number: 1, name: "Saarbrücker Rathaus", active: false, found: true, coordinates: [49.233, 7.0]},
+        {number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: true, coordinates: [49.240, 6.99]},
+        {number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.231, 7.01]},
+        {number: 4, name: "Saarbrücker Schloss", active: false, found: false, coordinates: [49.25, 6.91]},
+        {number: 5, name: "Zoo", active: false, found: false, coordinates: [49.21, 7.07]},
+        {number: 6, name: "Johanneskirche", active: false, found: false, coordinates: [49.235, 7.03]},
+        {number: 7, name: "Staatstheater", active: false, found: false, coordinates: [49.31, 6.92]}
     ];
 }
 
@@ -79,6 +80,7 @@ function addPOIToList(poi, orderDefined) {
     }
 
     updatePOIColor(poi, label);
+    checkUserInProximity(poi, label);
     li.appendChild(label);
     poiList.appendChild(li);
 }
@@ -105,7 +107,7 @@ function activatePoi(poi, label) {
         if (poiCircles[poi.number]) {
             map.addLayer(poiCircles[poi.number]);
         } else {
-            poiCircles[poi.number] = drawCircle(poi.coordinates,CIRCLE_RADIUS, poi.name);  // Pass the POI's name here
+            poiCircles[poi.number] = drawCircle(poi.coordinates, CIRCLE_RADIUS, poi.name);  // Pass the POI's name here
         }
     } else {
         if (poiCircles[poi.number]) {
@@ -180,7 +182,7 @@ function adjustViewToIncludeAllCircles() {
         if (userMarker) {
             bounds.extend(userMarker.getLatLng());
         }
-        map.fitBounds(bounds, { padding: [50, 50] });
+        map.fitBounds(bounds, {padding: [50, 50]});
     } else if (userMarker) {
         map.setView(userMarker.getLatLng(), 13);
     }
@@ -194,4 +196,38 @@ function updateProgressBar() {
     const progressBar = document.getElementById("progressBar");
     progressBar.style.width = `${progress}%`;
     progressBar.textContent = `${Math.round(progress)}%`;
+}
+
+function checkUserInProximity(poi, label) {
+    setInterval(() => {
+        if (userPosition && poi.active) {
+            const distance = getDistance(userPosition, poi.coordinates);
+            if (distance <= PROXIMITY_RADIUS) {
+                poi.found = true;
+                poi.active = false;
+                updatePOIColor(poi, label);
+                map.removeLayer(poiCircles[poi.number]);
+                updateProgressBar();
+                alert(`Sie haben ${poi.name} gefunden`);
+            }
+        }
+    }, 2000); // Check every 2 seconds
+}
+
+function getDistance(coord1, coord2) {
+    const lat1 = coord1[0];
+    const lon1 = coord1[1];
+    const lat2 = coord2[0];
+    const lon2 = coord2[1];
+
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return distance;
 }
