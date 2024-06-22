@@ -44,7 +44,7 @@ function getPois() {
     return [
         {number: 1, name: "Saarbrücker Rathaus", active: false, found: true, coordinates: [49.233, 7.0], sound:"test.mp3"},
         {number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: true, coordinates: [49.240, 6.99], sound:"test2.mp3"},
-        {number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.231, 7.01], sound:"test.mp3"},
+        {number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.236590, 6.990146], sound:"test.mp3"},
         {number: 4, name: "Saarbrücker Schloss", active: false, found: false, coordinates: [49.2315, 7.015], sound:"test2.mp3"},
         {number: 5, name: "Zoo", active: false, found: false, coordinates: [49.21, 7.07], sound:"test.mp3"},
         {number: 6, name: "Johanneskirche", active: false, found: false, coordinates: [49.235, 7.03], sound:"test2.mp3"},
