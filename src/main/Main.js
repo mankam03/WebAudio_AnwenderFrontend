@@ -2,11 +2,13 @@ const CIRCLE_RADIUS = 500;
 const PROXIMITY_RADIUS = 0.005;  // Approx. 500 meters in degrees
 
 let pois = [];
+let audios = [];
 let map;
 let userPosition = null;
 let userMarker = null;
 let poiCircles = {};
 let orderDefined = false;
+let randomCircleCenter = []
 
 document.addEventListener('DOMContentLoaded', (event) => {
     getAnwendungszweck();
@@ -16,6 +18,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     pois = getPois();
     pois.forEach(poi => {
         addPOIToList(poi, orderDefined);
+        audios[poi.number] = new Audio(`/src/main/${poi.sound}`)
+        audios[poi.number].loop = true;
     });
 
     updateProgressBar();
@@ -38,13 +42,13 @@ function getAnwendungszweck() {
 
 function getPois() {
     return [
-        {number: 1, name: "Saarbrücker Rathaus", active: false, found: true, coordinates: [49.233, 7.0]},
-        {number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: true, coordinates: [49.240, 6.99]},
-        {number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.231, 7.01]},
-        {number: 4, name: "Saarbrücker Schloss", active: false, found: false, coordinates: [49.25, 6.91]},
-        {number: 5, name: "Zoo", active: false, found: false, coordinates: [49.21, 7.07]},
-        {number: 6, name: "Johanneskirche", active: false, found: false, coordinates: [49.235, 7.03]},
-        {number: 7, name: "Staatstheater", active: false, found: false, coordinates: [49.31, 6.92]}
+        {number: 1, name: "Saarbrücker Rathaus", active: false, found: true, coordinates: [49.233, 7.0], sound:"test.mp3"},
+        {number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: true, coordinates: [49.240, 6.99], sound:"test2.mp3"},
+        {number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.231, 7.01], sound:"test.mp3"},
+        {number: 4, name: "Saarbrücker Schloss", active: false, found: false, coordinates: [49.2315, 7.015], sound:"test2.mp3"},
+        {number: 5, name: "Zoo", active: false, found: false, coordinates: [49.21, 7.07], sound:"test.mp3"},
+        {number: 6, name: "Johanneskirche", active: false, found: false, coordinates: [49.235, 7.03], sound:"test2.mp3"},
+        {number: 7, name: "Staatstheater", active: false, found: false, coordinates: [49.31, 6.92], sound:"test.mp3"}
     ];
 }
 
@@ -67,7 +71,7 @@ function addPOIToList(poi, orderDefined) {
         label.innerHTML = `${poi.name}`;
         label.addEventListener('click', function () {
             if (poi.found && !poi.active) {
-                const proceed = confirm("Dieser Point of Interest wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?");
+                const proceed = confirm(`${poi.name} wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?` );
                 if (proceed) {
                     activatePoi(poi, label);
                 }
@@ -104,18 +108,32 @@ function activatePoi(poi, label) {
     poi.active = !poi.active;
     updatePOIColor(poi, label);
     if (poi.active) {
+        playAudio(poi);
         if (poiCircles[poi.number]) {
             map.addLayer(poiCircles[poi.number]);
         } else {
-            poiCircles[poi.number] = drawCircle(poi.coordinates, CIRCLE_RADIUS, poi.name);  // Pass the POI's name here
+            poiCircles[poi.number] = drawCircle(poi.number, poi.coordinates, CIRCLE_RADIUS, poi.name);  // Pass the POI's name here
         }
     } else {
+        audios[poi.number].pause();
         if (poiCircles[poi.number]) {
             map.removeLayer(poiCircles[poi.number]);
         }
     }
     adjustViewToIncludeAllCircles();
 }
+
+function playAudio(poi) {
+    setInterval(() => {
+        if (userPosition && poi.active) {
+            const distance = getDistance(userPosition, randomCircleCenter[poi.number]) * 1000; // Convert to meters
+            if (distance <= CIRCLE_RADIUS) {
+                audios[poi.number].play();
+            }
+        }
+    }, 500); // Check every 0.5 seconds
+}
+
 
 function updatePOIColor(poi, label) {
     if (poi.active) {
@@ -127,7 +145,7 @@ function updatePOIColor(poi, label) {
     }
 }
 
-function drawCircle(center, radius, name) {
+function drawCircle(poi_number, center, radius, poi_name) {
     const randomizedCoordinates = getRandomizedCoordinates(center, radius);
     const circle = L.circle(randomizedCoordinates, {
         color: 'blue',
@@ -135,7 +153,8 @@ function drawCircle(center, radius, name) {
         fillOpacity: 0.2,
         radius: radius
     }).addTo(map);
-    circle.bindPopup(name);  // Add this line to bind the name to the circle
+    circle.bindPopup(poi_name);  // Add this line to bind the name to the circle
+    randomCircleCenter[poi_number] = randomizedCoordinates;
     return circle;
 }
 
@@ -207,6 +226,7 @@ function checkUserInProximity(poi, label) {
                 poi.active = false;
                 updatePOIColor(poi, label);
                 map.removeLayer(poiCircles[poi.number]);
+                audios[poi.number].pause();
                 updateProgressBar();
                 alert(`Sie haben ${poi.name} gefunden`);
             }
@@ -227,7 +247,6 @@ function getDistance(coord1, coord2) {
         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
 
-    return distance;
+    return R * c;
 }
