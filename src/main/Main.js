@@ -20,6 +20,15 @@ function submitUseCaseId() {
     fetch(`${SERVER_URL}/usecases/${usecase_id}`)
         .then(response => response.json())
         .then(usecases => {
+
+            // Abfangen, dass Usecase nicht existiert
+            if(usecases.length === 0){
+                alert("Ungültige Anwendungszwecknummer")
+                showPopup()
+                return;
+            }
+
+            // Usecase laden
             usecases.forEach(usecase => {
                 const titelAnwendungszweckElement = document.getElementById("titelAnwendungszweck");
                 titelAnwendungszweckElement.innerHTML = usecase.titel;
