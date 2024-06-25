@@ -33,10 +33,6 @@ function submitUseCaseId() {
             getLocation();
             initializeCentralMap();
             loadPois();
-            updateProgressBar();
-            if (orderDefined) {
-                activateFirstUnfoundPoi();
-            }
 
             // Progress-Bar nach dem Laden der Daten wieder anzeigen
             const progressContainer = document.getElementById('progressContainer');
@@ -95,22 +91,26 @@ function loadPois() {
             data.forEach(poi => {
                 poi.active = false;
                 poi.found = false;
-                pois[poi.order] = poi;
+                pois.push(poi); // Verwenden von push, um Lücken zu vermeiden
                 addPOIToList(poi, orderDefined);
                 audios[poi.order] = new Audio(`/src/main/${poi.soundfile_id}.mp3`)
                 audios[poi.order].loop = true;
-            })
+            });
+
+            if (orderDefined) {
+                activateFirstUnfoundPoi();
+            }
+
         })
         .catch(error => {
             console.error('Error fetching UseCase:', error);
         });
-    console.log(pois)
 }
 
 function updateProgressBar() {
     const totalPois = pois.length;
     const visitedPois = pois.filter(poi => poi.found).length;
-    const progress = (visitedPois / totalPois) * 100;
+    const progress = (visitedPois / (totalPois)) * 100;
 
     const progressBar = document.getElementById("progressBar");
     progressBar.style.width = `${progress}%`;
