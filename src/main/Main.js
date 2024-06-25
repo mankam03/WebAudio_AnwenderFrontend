@@ -1,67 +1,139 @@
 const CIRCLE_RADIUS = 500;
 const PROXIMITY_RADIUS = 0.005;  // Approx. 500 meters in degrees
 
-let pois = [];
+const SERVER_URL = "http://localhost:4000"
+let usecase_id;
+
+let pois = []
 let audios = [];
 let map;
 let userPosition = null;
 let userMarker = null;
 let poiCircles = {};
-let orderDefined = false;
+let orderDefined;
 let randomCircleCenter = []
 
-document.addEventListener('DOMContentLoaded', (event) => {
-    getAnwendungszweck();
-    getLocation();
-    initializeCentralMap();
 
-    pois = getPois();
-    pois.forEach(poi => {
-        addPOIToList(poi, orderDefined);
-        audios[poi.number] = new Audio(`/src/main/${poi.sound}`)
-        audios[poi.number].loop = true;
-    });
+function submitUseCaseId() {
+    usecase_id = document.getElementById('useCaseIdInput').value;
 
-    updateProgressBar();
+    fetch(`${SERVER_URL}/usecases/${usecase_id}`)
+        .then(response => response.json())
+        .then(usecases => {
+            usecases.forEach(usecase => {
+                const titelAnwendungszweckElement = document.getElementById("titelAnwendungszweck");
+                titelAnwendungszweckElement.innerHTML = usecase.titel;
 
-    if (orderDefined) {
-        activateFirstUnfoundPoi();
-    }
-});
+                const beschreibungAnwendungszweckElement = document.getElementById("beschreibungAnwendungszweck");
+                beschreibungAnwendungszweckElement.innerHTML = usecase.beschreibung;
 
-function getAnwendungszweck() {
-    const titelAnwendungszweckElement = document.getElementById("titelAnwendungszweck");
-    titelAnwendungszweckElement.innerHTML = "Entdecke Saarbrücken";
+                orderDefined = usecase.fixed_order === 1;
+            });
 
-    const beschreibungAnwendungszweckElement = document.getElementById("beschreibungAnwendungszweck");
-    beschreibungAnwendungszweckElement.innerHTML = "Herzlich Willkommen in Saarbrücken! " +
-        "Entdecken Sie mit dieser Liste die schönsten Flecken, die Saarbrücken zu bieten hat.<br>" +
-        "Ihr Ansprechpartner: 0173-727328<br>" +
-        "Ansonsten wünschen wir Ihnen viel Spaß!";
+            getLocation();
+            initializeCentralMap();
+            loadPois();
+            updateProgressBar();
+            if (orderDefined) {
+                activateFirstUnfoundPoi();
+            }
+
+            // Progress-Bar nach dem Laden der Daten wieder anzeigen
+            const progressContainer = document.getElementById('progressContainer');
+            progressContainer.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error fetching UseCase:', error);
+        });
+
+    const overlay = document.getElementById('overlay');
+    const popup = document.getElementById('useCaseIdPopup');
+    overlay.style.display = 'none';
+    popup.style.display = 'none';
 }
 
-function getPois() {
-    return [
-        {number: 1, name: "Saarbrücker Rathaus", active: false, found: true, coordinates: [49.233, 7.0], sound:"test.mp3"},
-        {number: 2, name: "Saarbrücker Hauptbahnhof", active: false, found: true, coordinates: [49.240, 6.99], sound:"test2.mp3"},
-        {number: 3, name: "Landwehrplatz", active: false, found: false, coordinates: [49.236590, 6.990146], sound:"test.mp3"},
-        {number: 4, name: "Saarbrücker Schloss", active: false, found: false, coordinates: [49.2315, 7.015], sound:"test2.mp3"},
-        {number: 5, name: "Zoo", active: false, found: false, coordinates: [49.21, 7.07], sound:"test.mp3"},
-        {number: 6, name: "Johanneskirche", active: false, found: false, coordinates: [49.235, 7.03], sound:"test2.mp3"},
-        {number: 7, name: "Staatstheater", active: false, found: false, coordinates: [49.31, 6.92], sound:"test.mp3"}
-    ];
+
+// Initial aufgerufene Methoden
+document.addEventListener('DOMContentLoaded', (event) => {
+    showPopup();
+});
+
+
+// Hilfsmethoden der initial aufgerufenen Methoden
+function showPopup() {
+    const overlay = document.getElementById('overlay');
+    const popup = document.getElementById('useCaseIdPopup');
+    overlay.style.display = 'block';
+    popup.style.display = 'block';
+
+    // Progress-Bar ausblenden
+    const progressContainer = document.getElementById('progressContainer');
+    progressContainer.style.display = 'none';
+}
+
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(showPosition);
+    } else {
+        alert("GPS-Daten können in diesem Browser nicht gelesen werden.");
+    }
 }
 
 function initializeCentralMap() {
     const mapContainer = document.getElementById('centralMap');
     map = L.map(mapContainer).setView([49.233, 7.0], 13);
-
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 18
     }).addTo(map);
 }
 
+function loadPois() {
+    fetch(SERVER_URL + `/usecases/${usecase_id}/pois`)
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(poi => {
+                poi.active = false;
+                poi.found = false;
+                pois[poi.order] = poi;
+                addPOIToList(poi, orderDefined);
+                audios[poi.order] = new Audio(`/src/main/${poi.soundfile_id}.mp3`)
+                audios[poi.order].loop = true;
+            })
+        })
+        .catch(error => {
+            console.error('Error fetching UseCase:', error);
+        });
+    console.log(pois)
+}
+
+function updateProgressBar() {
+    const totalPois = pois.length;
+    const visitedPois = pois.filter(poi => poi.found).length;
+    const progress = (visitedPois / totalPois) * 100;
+
+    const progressBar = document.getElementById("progressBar");
+    progressBar.style.width = `${progress}%`;
+    progressBar.textContent = `${Math.round(progress)}%`;
+}
+
+function activateFirstUnfoundPoi() {
+    for (let poi of pois) {
+        if (!poi.found) {
+            const poiList = document.getElementById('poiList');
+            const labels = poiList.getElementsByTagName('label');
+            for (let label of labels) {
+                if (label.innerHTML.includes(poi.name)) {
+                    activatePoi(poi, label);
+                    return;
+                }
+            }
+        }
+    }
+}
+
+
+// Hilsfmethoden der Hilfsmethoden der initialen Methoden
 function addPOIToList(poi, orderDefined) {
     const poiList = document.getElementById('poiList');
     const li = document.createElement('li');
@@ -80,7 +152,7 @@ function addPOIToList(poi, orderDefined) {
             }
         });
     } else {
-        label.innerHTML = `${poi.number}&emsp;${poi.name}`;
+        label.innerHTML = `${poi.order}&emsp;${poi.name}`;
     }
 
     updatePOIColor(poi, label);
@@ -89,35 +161,20 @@ function addPOIToList(poi, orderDefined) {
     poiList.appendChild(li);
 }
 
-function activateFirstUnfoundPoi() {
-    for (let poi of pois) {
-        if (!poi.found) {
-            const poiList = document.getElementById('poiList');
-            const labels = poiList.getElementsByTagName('label');
-            for (let label of labels) {
-                if (label.innerHTML.includes(poi.name)) {
-                    activatePoi(poi, label);
-                    return;
-                }
-            }
-        }
-    }
-}
-
 function activatePoi(poi, label) {
     poi.active = !poi.active;
     updatePOIColor(poi, label);
     if (poi.active) {
         playAudio(poi);
-        if (poiCircles[poi.number]) {
-            map.addLayer(poiCircles[poi.number]);
+        if (poiCircles[poi.order]) {
+            map.addLayer(poiCircles[poi.order]);
         } else {
-            poiCircles[poi.number] = drawCircle(poi.number, poi.coordinates, CIRCLE_RADIUS, poi.name);  // Pass the POI's name here
+            poiCircles[poi.order] = drawCircle(poi.order, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)], CIRCLE_RADIUS, poi.name);
         }
     } else {
-        audios[poi.number].pause();
-        if (poiCircles[poi.number]) {
-            map.removeLayer(poiCircles[poi.number]);
+        audios[poi.order].pause();
+        if (poiCircles[poi.order]) {
+            map.removeLayer(poiCircles[poi.order]);
         }
     }
     adjustViewToIncludeAllCircles();
@@ -126,11 +183,11 @@ function activatePoi(poi, label) {
 function playAudio(poi) {
     setInterval(() => {
         if (userPosition && poi.active) {
-            const distance = getDistance(userPosition, randomCircleCenter[poi.number]) * 1000; // Convert to meters
+            const distance = getDistance(userPosition, randomCircleCenter[poi.order]) * 1000; // Convert to meters
             if (distance <= CIRCLE_RADIUS) {
-                audios[poi.number].play();
+                audios[poi.order].play();
             } else {
-                audios[poi.number].pause();
+                audios[poi.order].pause();
             }
         }
     }, 500); // Check every 0.5 seconds
@@ -147,7 +204,7 @@ function updatePOIColor(poi, label) {
     }
 }
 
-function drawCircle(poi_number, center, radius, poi_name) {
+function drawCircle(poi_order, center, radius, poi_name) {
     const randomizedCoordinates = getRandomizedCoordinates(center, radius);
     const circle = L.circle(randomizedCoordinates, {
         color: 'blue',
@@ -155,8 +212,8 @@ function drawCircle(poi_number, center, radius, poi_name) {
         fillOpacity: 0.2,
         radius: radius
     }).addTo(map);
-    circle.bindPopup(poi_name);  // Add this line to bind the name to the circle
-    randomCircleCenter[poi_number] = randomizedCoordinates;
+    circle.bindPopup(poi_name);
+    randomCircleCenter[poi_order] = randomizedCoordinates;
     return circle;
 }
 
@@ -174,13 +231,7 @@ function getRandomizedCoordinates(center, radius) {
     return [newLat, newLng];
 }
 
-function getLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(showPosition);
-    } else {
-        alert("GPS-Daten können in diesem Browser nicht gelesen werden.");
-    }
-}
+
 
 function showPosition(position) {
     userPosition = [position.coords.latitude, position.coords.longitude];
@@ -209,26 +260,16 @@ function adjustViewToIncludeAllCircles() {
     }
 }
 
-function updateProgressBar() {
-    const totalPois = pois.length;
-    const visitedPois = pois.filter(poi => poi.found).length;
-    const progress = (visitedPois / totalPois) * 100;
-
-    const progressBar = document.getElementById("progressBar");
-    progressBar.style.width = `${progress}%`;
-    progressBar.textContent = `${Math.round(progress)}%`;
-}
-
 function checkUserInProximity(poi, label) {
     setInterval(() => {
         if (userPosition && poi.active) {
-            const distance = getDistance(userPosition, poi.coordinates);
+            const distance = getDistance(userPosition, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
             if (distance <= PROXIMITY_RADIUS) {
                 poi.found = true;
                 poi.active = false;
                 updatePOIColor(poi, label);
-                map.removeLayer(poiCircles[poi.number]);
-                audios[poi.number].pause();
+                map.removeLayer(poiCircles[poi.order]);
+                audios[poi.order].pause();
                 updateProgressBar();
                 alert(`Sie haben ${poi.name} gefunden`);
             }

@@ -16,5 +16,5 @@ app.get('/', (req, res) => {
 
 // Server starten
 app.listen(port, () => {
-    console.log('Server läuft unter http://localhost:3000');
+    console.log('Anwendung läuft unter http://localhost:3000');
 });
