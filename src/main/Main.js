@@ -99,12 +99,14 @@ function loadPois() {
         .then(data => {
             data.forEach(poi => {
                 poi.active = false;
-                poi.found = false;
-                pois.push(poi); // Verwenden von push, um Lücken zu vermeiden
+                poi.found = false;  // Wird nachfolgend aktualisiert
+                pois.push(poi);
                 addPOIToList(poi, orderDefined);
                 audios[poi.order] = new Audio(`/src/main/${poi.soundfile_id}.mp3`)
                 audios[poi.order].loop = true;
             });
+
+            updateProgressBar();
 
             if (orderDefined) {
                 activateFirstUnfoundPoi();
@@ -144,6 +146,9 @@ function activateFirstUnfoundPoi() {
 
 // Hilsfmethoden der Hilfsmethoden der initialen Methoden
 function addPOIToList(poi, orderDefined) {
+
+    loadProgress(poi);
+
     const poiList = document.getElementById('poiList');
     const li = document.createElement('li');
 
@@ -152,7 +157,7 @@ function addPOIToList(poi, orderDefined) {
         label.innerHTML = `${poi.name}`;
         label.addEventListener('click', function () {
             if (poi.found && !poi.active) {
-                const proceed = confirm(`${poi.name} wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?` );
+                const proceed = confirm(`${poi.name} wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?`);
                 if (proceed) {
                     activatePoi(poi, label);
                 }
@@ -279,6 +284,7 @@ function checkUserInProximity(poi, label) {
                 updatePOIColor(poi, label);
                 map.removeLayer(poiCircles[poi.order]);
                 audios[poi.order].pause();
+                saveProgress(poi);
                 updateProgressBar();
                 alert(`Sie haben ${poi.name} gefunden`);
             }
@@ -302,3 +308,24 @@ function getDistance(coord1, coord2) {
 
     return R * c;
 }
+
+function saveProgress(poi) {
+    let foundPois = JSON.parse(localStorage.getItem(`usecase_${usecase_id}_foundPois`)) || [];
+    if (poi.found) {
+        if (!foundPois.includes(poi.id)) {
+            foundPois.push(poi.id);
+        }
+    } else {
+        foundPois = foundPois.filter(id => id !== poi.id);
+    }
+    localStorage.setItem(`usecase_${usecase_id}_foundPois`, JSON.stringify(foundPois));
+}
+
+
+function loadProgress(poi) {
+    const foundPois = JSON.parse(localStorage.getItem(`usecase_${usecase_id}_foundPois`)) || [];
+    if (foundPois.includes(poi.id)) {
+        poi.found = true;
+    }
+}
+
