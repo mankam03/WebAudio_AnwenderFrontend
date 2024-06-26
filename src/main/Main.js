@@ -123,7 +123,7 @@ function loadPois() {
             updateProgressBar();
 
             if (orderDefined) {
-                activateFirstUnfoundPoi();
+                activateNextUnfoundPoi();
             }
 
         })
@@ -142,7 +142,7 @@ function updateProgressBar() {
     progressBar.textContent = `${Math.round(progress)}%`;
 }
 
-function activateFirstUnfoundPoi() {
+function activateNextUnfoundPoi() {
     for (let poi of pois) {
         if (!poi.found) {
             const poiList = document.getElementById('poiList');
@@ -314,6 +314,9 @@ function checkUserInProximity(poi, label) {
                 saveProgress(poi);
                 updateProgressBar();
                 alert(`Sie haben ${poi.name} gefunden`);
+                if (orderDefined) {
+                    activateNextUnfoundPoi();
+                }
             }
         }
     }, 2000); // Check every 2 seconds
