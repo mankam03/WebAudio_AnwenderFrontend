@@ -1,42 +1,38 @@
-const CIRCLE_RADIUS = 500;
-const PROXIMITY_RADIUS = 0.005;  // Approx. 500 meters in degrees
+const CIRCLE_RADIUS = 500;              // Radius Kreis auf Karte in Meter
+const PROXIMITY_RADIUS = 30 / 1000;     // Erste Zahl: Ab wie viel Metern POI triggern soll
+const SERVER_URL = "http://mankam.ddns.net:4000";
 
-const SERVER_URL = "http://mankam.ddns.net:4000"
 let usecase_id;
-
-let pois = []
-let audios = [];
+let pois = [];
+let audioElements = [];
+let audioContexts = [];
+let pannerNodes = [];
 let map;
 let userPosition = null;
 let userMarker = null;
 let poiCircles = {};
 let orderDefined;
-let randomCircleCenter = []
+let randomCircleCenter = [];
 
 
 function submitUseCaseId() {
-
     usecase_id = document.getElementById('useCaseIdInput').value;
 
-    // Popup weiterhin anzeigen, wenn nichts eingegeben
     if (usecase_id === '') {
-        alert("Keine Anwendungszwecknummer angegeben")
-        showPopup()
+        alert("Keine Anwendungszwecknummer angegeben");
+        showPopup();
         return;
     }
 
     fetch(`${SERVER_URL}/usecases/${usecase_id}`)
         .then(response => response.json())
         .then(usecases => {
-
-            // Popup weiterhin anzeigen, wenn UsecaseID nicht existiert
-            if(usecases.length === 0){
-                alert("Ungültige Anwendungszwecknummer")
-                showPopup()
+            if (usecases.length === 0) {
+                alert("Ungültige Anwendungszwecknummer");
+                showPopup();
                 return;
             }
 
-            // Usecase laden
             usecases.forEach(usecase => {
                 const titelAnwendungszweckElement = document.getElementById("titelAnwendungszweck");
                 titelAnwendungszweckElement.innerHTML = usecase.titel;
@@ -51,7 +47,6 @@ function submitUseCaseId() {
             initializeCentralMap();
             loadPois();
 
-            // Progress-Bar nach dem Laden der Daten wieder anzeigen
             const progressContainer = document.getElementById('progressContainer');
             progressContainer.style.display = 'block';
         })
@@ -65,21 +60,16 @@ function submitUseCaseId() {
     popup.style.display = 'none';
 }
 
-
-// Initial aufgerufene Methoden
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', () => {
     showPopup();
 });
 
-
-// Hilfsmethoden der initial aufgerufenen Methoden
 function showPopup() {
     const overlay = document.getElementById('overlay');
     const popup = document.getElementById('useCaseIdPopup');
     overlay.style.display = 'block';
     popup.style.display = 'block';
 
-    // Progress-Bar ausblenden
     const progressContainer = document.getElementById('progressContainer');
     progressContainer.style.display = 'none';
 }
@@ -107,11 +97,27 @@ function loadPois() {
         .then(data => {
             data.forEach(poi => {
                 poi.active = false;
-                poi.found = false;                  // Nur zum initialisieren des Attributs
+                poi.found = false;
                 pois.push(poi);
-                addPOIToList(poi, orderDefined);    // found wird hier aktualisiert mit loadProgress()
-                audios[poi.order] = new Audio(`/src/main/${poi.soundfile_id}.mp3`)
-                audios[poi.order].loop = true;
+                addPOIToList(poi, orderDefined);
+
+                const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);
+                audioElement.loop = true;
+                audioElements[poi.order] = audioElement;
+
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const pannerNode = audioContext.createPanner();
+                pannerNode.panningModel = 'HRTF';
+                pannerNode.distanceModel = 'linear';
+                pannerNode.maxDistance = CIRCLE_RADIUS;
+                pannerNode.refDistance = 1;
+                pannerNode.rolloffFactor = 3;
+
+                const source = audioContext.createMediaElementSource(audioElement);
+                source.connect(pannerNode).connect(audioContext.destination);
+
+                audioContexts[poi.order] = audioContext;
+                pannerNodes[poi.order] = pannerNode;
             });
 
             updateProgressBar();
@@ -129,7 +135,7 @@ function loadPois() {
 function updateProgressBar() {
     const totalPois = pois.length;
     const visitedPois = pois.filter(poi => poi.found).length;
-    const progress = (visitedPois / (totalPois)) * 100;
+    const progress = (visitedPois / totalPois) * 100;
 
     const progressBar = document.getElementById("progressBar");
     progressBar.style.width = `${progress}%`;
@@ -151,10 +157,7 @@ function activateFirstUnfoundPoi() {
     }
 }
 
-
-// Hilsfmethoden der Hilfsmethoden der initialen Methoden
 function addPOIToList(poi, orderDefined) {
-
     loadProgress(poi);
 
     const poiList = document.getElementById('poiList');
@@ -194,7 +197,7 @@ function activatePoi(poi, label) {
             poiCircles[poi.order] = drawCircle(poi.order, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)], CIRCLE_RADIUS, poi.name);
         }
     } else {
-        audios[poi.order].pause();
+        audioElements[poi.order].pause();
         if (poiCircles[poi.order]) {
             map.removeLayer(poiCircles[poi.order]);
         }
@@ -205,15 +208,34 @@ function activatePoi(poi, label) {
 function playAudio(poi) {
     setInterval(() => {
         if (userPosition && poi.active) {
-            const distance = getDistance(userPosition, randomCircleCenter[poi.order]) * 1000; // Convert to meters
-            if (distance <= CIRCLE_RADIUS) {
-                audios[poi.order].play();
+            const distanceToPoi = getDistance(userPosition, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]) * 1000; // Convert to meters
+            const distanceToCircleCenter = getDistance(userPosition, randomCircleCenter[poi.order]) * 1000;
+
+            if (distanceToCircleCenter <= CIRCLE_RADIUS) {
+                audioElements[poi.order].play();
+                updatePannerPosition(poi.order, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
+
+                // Adjust volume based on proximity (optional)
+                const maxVolume = 1.0;
+                const minVolume = 0.1;
+                const volume = 1.0 - (distanceToPoi / CIRCLE_RADIUS);
+                audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
             } else {
-                audios[poi.order].pause();
+                audioElements[poi.order].pause();
             }
         }
     }, 500); // Check every 0.5 seconds
 }
+
+
+function updatePannerPosition(order, poiPosition) {
+    if (userPosition && pannerNodes[order]) {
+        const x = poiPosition[1] - userPosition[1]; // Longitude difference
+        const z = userPosition[0] - poiPosition[0]; // Latitude difference
+        pannerNodes[order].setPosition(x, 0, z);
+    }
+}
+
 
 function updatePOIColor(poi, label) {
     if (poi.active) {
@@ -288,7 +310,7 @@ function checkUserInProximity(poi, label) {
                 poi.active = false;
                 updatePOIColor(poi, label);
                 map.removeLayer(poiCircles[poi.order]);
-                audios[poi.order].pause();
+                audioElements[poi.order].pause();
                 saveProgress(poi);
                 updateProgressBar();
                 alert(`Sie haben ${poi.name} gefunden`);
