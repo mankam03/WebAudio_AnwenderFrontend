@@ -1,7 +1,7 @@
 const CIRCLE_RADIUS = 500;
 const PROXIMITY_RADIUS = 0.005;  // Approx. 500 meters in degrees
 
-const SERVER_URL = "http://localhost:4000"
+const SERVER_URL = "http://mankam.ddns.net:4000"
 let usecase_id;
 
 let pois = []
