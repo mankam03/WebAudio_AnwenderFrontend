@@ -215,7 +215,6 @@ function playAudio(poi) {
     }, 500); // Check every 0.5 seconds
 }
 
-
 function updatePOIColor(poi, label) {
     if (poi.active) {
         label.style.color = "blue";
@@ -252,8 +251,6 @@ function getRandomizedCoordinates(center, radius) {
 
     return [newLat, newLng];
 }
-
-
 
 function showPosition(position) {
     userPosition = [position.coords.latitude, position.coords.longitude];
@@ -329,11 +326,9 @@ function saveProgress(poi) {
     localStorage.setItem(`usecase_${usecase_id}_foundPois`, JSON.stringify(foundPois));
 }
 
-
 function loadProgress(poi) {
     const foundPois = JSON.parse(localStorage.getItem(`usecase_${usecase_id}_foundPois`)) || [];
     if (foundPois.includes(poi.id)) {
         poi.found = true;
     }
 }
-
