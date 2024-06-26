@@ -15,13 +15,21 @@ let randomCircleCenter = []
 
 
 function submitUseCaseId() {
+
     usecase_id = document.getElementById('useCaseIdInput').value;
+
+    // Popup weiterhin anzeigen, wenn nichts eingegeben
+    if (usecase_id === '') {
+        alert("Keine Anwendungszwecknummer angegeben")
+        showPopup()
+        return;
+    }
 
     fetch(`${SERVER_URL}/usecases/${usecase_id}`)
         .then(response => response.json())
         .then(usecases => {
 
-            // Abfangen, dass Usecase nicht existiert
+            // Popup weiterhin anzeigen, wenn UsecaseID nicht existiert
             if(usecases.length === 0){
                 alert("Ungültige Anwendungszwecknummer")
                 showPopup()
@@ -99,9 +107,9 @@ function loadPois() {
         .then(data => {
             data.forEach(poi => {
                 poi.active = false;
-                poi.found = false;  // Wird nachfolgend aktualisiert
+                poi.found = false;                  // Nur zum initialisieren des Attributs
                 pois.push(poi);
-                addPOIToList(poi, orderDefined);
+                addPOIToList(poi, orderDefined);    // found wird hier aktualisiert mit loadProgress()
                 audios[poi.order] = new Audio(`/src/main/${poi.soundfile_id}.mp3`)
                 audios[poi.order].loop = true;
             });
