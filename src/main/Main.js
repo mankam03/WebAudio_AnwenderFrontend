@@ -209,14 +209,13 @@ function activatePoi(poi, label) {
 function playAudio(poi) {
     setInterval(() => {
         if (userPosition && poi.active) {
-            const distanceToPoi = getDistance(userPosition, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]) * 1000; // Convert to meters
+            const distanceToPoi = getDistance(userPosition, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
             const distanceToCircleCenter = getDistance(userPosition, randomCircleCenter[poi.order]) * 1000;
 
             if (distanceToCircleCenter <= CIRCLE_RADIUS) {
                 audioElements[poi.order].play();
                 updatePannerPosition(poi.order, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
 
-                // Adjust volume based on proximity (optional)
                 const maxVolume = 1.0;
                 const minVolume = 0.1;
                 const volume = 1.0 - (distanceToPoi / CIRCLE_RADIUS);
