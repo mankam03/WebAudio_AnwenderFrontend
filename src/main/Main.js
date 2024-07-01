@@ -1,6 +1,6 @@
-const CIRCLE_RADIUS = 500;              // Radius Kreis auf Karte in Meter
-const PROXIMITY_RADIUS = 30 / 1000;     // Erste Zahl: Ab wie viel Metern POI triggern soll
-const SERVER_URL = "http://mankam.ddns.net:4000";
+const CIRCLE_RADIUS = 500;              // radius of circle on map (meter)
+const PROXIMITY_RADIUS = 30 / 1000;     // first number: how near (meter) user must be to trigger found poi
+const SERVER_URL = "http://mankam.ddns.net:4000";       // temporary during development
 
 let usecase_id;
 let pois = [];
@@ -101,6 +101,7 @@ function loadPois() {
                 pois.push(poi);
                 addPOIToList(poi, orderDefined);
 
+                // audio only thing that currently is not connected to database (currently local file)
                 const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);
                 audioElement.loop = true;
                 audioElements[poi.order] = audioElement;
@@ -224,14 +225,14 @@ function playAudio(poi) {
                 audioElements[poi.order].pause();
             }
         }
-    }, 500); // Check every 0.5 seconds
+    }, 500); // check every 0.5 seconds
 }
 
 
 function updatePannerPosition(order, poiPosition) {
     if (userPosition && pannerNodes[order]) {
-        const x = poiPosition[1] - userPosition[1]; // Longitude difference
-        const z = userPosition[0] - poiPosition[0]; // Latitude difference
+        const x = poiPosition[1] - userPosition[1]; // longitude difference
+        const z = userPosition[0] - poiPosition[0]; // latitude difference
         pannerNodes[order].setPosition(x, 0, z);
     }
 }
@@ -319,7 +320,7 @@ function checkUserInProximity(poi, label) {
                 }
             }
         }
-    }, 2000); // Check every 2 seconds
+    }, 2000); // check every 2 seconds
 }
 
 function getDistance(coord1, coord2) {
@@ -328,7 +329,7 @@ function getDistance(coord1, coord2) {
     const lat2 = coord2[0];
     const lon2 = coord2[1];
 
-    const R = 6371; // Radius of the Earth in km
+    const R = 6371; // radius of the Earth in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
