@@ -13,10 +13,26 @@ let userMarker = null;
 let poiCircles = {};
 let orderDefined;
 let randomCircleCenter = [];
+let autoAlignMap = true;
 
 
-function submitUseCaseId() {
-    usecase_id = document.getElementById('useCaseIdInput').value;
+async function submitUseCaseId(id) {
+
+    const progressContainer = document.getElementById('progressContainer');
+    progressContainer.style.display = 'none';
+
+    const warning = document.getElementById('audioWarning');
+    const confirm = document.getElementById('audioConfirm');
+    if (id) {
+        usecase_id = id;
+        await new Promise((resolve) => {
+            confirm.onclick = () => resolve();
+        });
+    } else {
+        usecase_id = document.getElementById('useCaseIdInput').value;
+    }
+    warning.style.display = 'none';
+    confirm.style.display = 'none';
 
     if (usecase_id === '') {
         alert("Keine Anwendungszwecknummer angegeben");
@@ -34,8 +50,9 @@ function submitUseCaseId() {
             }
 
             usecases.forEach(usecase => {
+
                 const titelAnwendungszweckElement = document.getElementById("titelAnwendungszweck");
-                titelAnwendungszweckElement.innerHTML = usecase.titel;
+                titelAnwendungszweckElement.innerHTML = `${usecase.titel} (#${usecase.id})`;
 
                 const beschreibungAnwendungszweckElement = document.getElementById("beschreibungAnwendungszweck");
                 beschreibungAnwendungszweckElement.innerHTML = usecase.beschreibung;
@@ -43,12 +60,17 @@ function submitUseCaseId() {
                 orderDefined = usecase.fixed_order === 1;
             });
 
+            localStorage.setItem('current_usecase_id', usecase_id);
             getLocation();
             initializeCentralMap();
             loadPois();
 
             const progressContainer = document.getElementById('progressContainer');
             progressContainer.style.display = 'block';
+
+            const sidebarButton = document.getElementById('openSidebarButton');
+            sidebarButton.style.display = 'block';
+
         })
         .catch(error => {
             console.error('Error fetching UseCase:', error);
@@ -61,7 +83,12 @@ function submitUseCaseId() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    showPopup();
+    const storedUseCaseId = localStorage.getItem('current_usecase_id');
+    if (storedUseCaseId) {
+        submitUseCaseId(storedUseCaseId);
+    } else {
+        showPopup();
+    }
 });
 
 function showPopup() {
@@ -207,6 +234,7 @@ function activatePoi(poi, label) {
 }
 
 function playAudio(poi) {
+    audioContexts[poi.order].resume();
     setInterval(() => {
         if (userPosition && poi.active) {
             const distanceToPoi = getDistance(userPosition, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
@@ -287,7 +315,7 @@ function showPosition(position) {
 
 function adjustViewToIncludeAllCircles() {
     const activeCircles = Object.values(poiCircles).filter(circle => map.hasLayer(circle));
-    if (activeCircles.length > 0) {
+    if (activeCircles.length > 0 && autoAlignMap) {
         const bounds = L.latLngBounds(activeCircles.map(circle => circle.getLatLng()));
         activeCircles.forEach(circle => {
             bounds.extend(circle.getBounds());
@@ -296,7 +324,7 @@ function adjustViewToIncludeAllCircles() {
             bounds.extend(userMarker.getLatLng());
         }
         map.fitBounds(bounds, {padding: [50, 50]});
-    } else if (userMarker) {
+    } else if (userMarker && autoAlignMap) {
         map.setView(userMarker.getLatLng(), 13);
     }
 }
@@ -356,4 +384,38 @@ function loadProgress(poi) {
     if (foundPois.includes(poi.id)) {
         poi.found = true;
     }
+}
+
+function resetProgress() {
+    if (confirm("Der Fortschritt für diesen Anwendungszweck geht für immer verloren. Trotzdem zurücksetzen?")) {
+        localStorage.removeItem(`usecase_${usecase_id}_foundPois`);
+        location.reload();
+    }
+}
+
+function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar.style.width === '250px') {
+        sidebar.style.width = '0';
+    } else {
+        sidebar.style.width = '250px';
+    }
+}
+
+function toggleAutoAlignMap() {
+    autoAlignMap = !autoAlignMap;
+    const button = document.querySelector('#sidebar a:nth-child(1)');
+
+    if (autoAlignMap) {
+        button.style.color = 'lightgreen';
+        button.textContent = 'Karte automatisch bewegen';
+    } else {
+        button.style.color = 'lightcoral';
+        button.textContent = 'Karte automatisch bewegen';
+    }
+}
+
+function leaveUsecase() {
+    localStorage.removeItem('current_usecase_id');
+    location.reload()
 }

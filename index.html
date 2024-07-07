@@ -21,17 +21,35 @@
     </div>
 </div>
 
-<h1 id="titelAnwendungszweck"></h1>
-<p id="beschreibungAnwendungszweck"></p>
-
-<div id="progressContainer">
-    <div id="progressBar">0%</div>
+<div class="header">
+    <h1 id="titelAnwendungszweck"></h1>
+    <button id="openSidebarButton" onclick="toggleSidebar()">☰</button>
 </div>
 
-<div id="centralMap"></div>
+<div class="confirmAudio">
+    <p id="audioWarning">Bitte bestätige, dass der Browser Audio abspielen darf.</p>
+    <button id="audioConfirm">Bestätigen</button>
+</div>
 
-<ul id="poiList"></ul>
+<div class="content">
+    <p id="beschreibungAnwendungszweck"></p>
+
+    <div id="progressContainer">
+        <div id="progressBar">0%</div>
+    </div>
+
+    <div id="centralMap"></div>
+
+    <ul id="poiList"></ul>
+
+    <div id="sidebar" class="sidebar">
+        <a href="#" onclick="toggleAutoAlignMap()" id="autoAlignButton">Karte automatisch bewegen</a>
+        <a href="#" onclick="resetProgress()">Fortschritt zurücksetzen</a>
+        <a href="#" onclick="leaveUsecase()">Anwendungszweck verlassen</a>
+    </div>
+</div>
 
 <script src="src/main/Main.js"></script>
 </body>
+
 </html>
