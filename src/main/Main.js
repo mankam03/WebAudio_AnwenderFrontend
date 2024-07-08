@@ -1,6 +1,6 @@
 const CIRCLE_RADIUS = 500;              // radius of circle on map (meter)
 const PROXIMITY_RADIUS = 30 / 1000;     // first number: how near (meter) user must be to trigger found poi
-const SERVER_URL = "http://mankam.ddns.net:4000";       // temporary during development
+const SERVER_URL = "../api";
 
 let usecase_id;
 let pois = [];
