@@ -40,6 +40,13 @@
     <ul id="poiList"></ul>
 
     <div id="sidebar" class="sidebar">
+        <div class="input-group">
+            <label for="loopIntervalInput">Audio-Loop-Intervall (sec):</label>
+            <div class="input-container">
+                <input type="number" id="loopIntervalInput" value="3" min="0" step="1">
+                <button id="setIntervalButton" onclick="setLoopInterval()">OK</button>
+            </div>
+        </div>
         <a href="#" onclick="toggleAutoAlignMap()" id="autoAlignButton">Karte automatisch bewegen</a>
         <a href="#" onclick="deleteRecentUsecases()">Zuletzt aufgerufene Anwendungszwecke aus Liste entfernen</a>
         <a href="#" onclick="resetProgress()">Fortschritt des Anwendungszweckes zurücksetzen</a>

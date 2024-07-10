@@ -1,7 +1,7 @@
 const CIRCLE_RADIUS = 500;              // radius of circle on map (meter)
-const PROXIMITY_RADIUS = 30 / 1000;     // first number: how near (meter) user must be to trigger found poi
-const SERVER_URL = "../api";            // location of all uberspace routes, e.g. ../api/accounts
-//const SERVER_URL = "http://mankam.ddns.net:4000"
+const PROXIMITY_RADIUS = 20 / 1000;     // first number: how near (meter) user must be to trigger found poi
+const SERVER_URL = "../api";
+// const SERVER_URL = "http://mankam.ddns.net:4000"
 
 let usecase_id;
 let pois = [];
@@ -15,7 +15,9 @@ let poiCircles = {};
 let orderDefined;
 let randomCircleCenter = [];
 let audioIntervals = [];
+
 let autoAlignMap = true;
+let loopInterval = 3;       // in seconds, default value
 
 
 function submitUseCaseId() {
@@ -40,17 +42,19 @@ function submitUseCaseId() {
             }
 
             usecases.forEach(usecase => {
-                const titelAnwendungszweckElement = document.getElementById("titelAnwendungszweck");
+                const titelAnwendungszweckElement =
+                    document.getElementById("titelAnwendungszweck");
                 titelAnwendungszweckElement.innerHTML = `${usecase.titel} (#${usecase.id})`;
 
-                const beschreibungAnwendungszweckElement = document.getElementById("beschreibungAnwendungszweck");
+                const beschreibungAnwendungszweckElement =
+                    document.getElementById("beschreibungAnwendungszweck");
                 beschreibungAnwendungszweckElement.innerHTML = usecase.beschreibung;
 
                 orderDefined = usecase.fixed_order === 1;
             });
 
             localStorage.setItem('current_usecase_id', usecase_id);
-            updateRecentUsecases(usecase_id); // Update recent use cases list
+            updateRecentUsecases(usecase_id);
             getLocation();
             initializeCentralMap();
             loadPois();
@@ -71,7 +75,6 @@ function submitUseCaseId() {
     overlay.style.display = 'none';
     popup.style.display = 'none';
 }
-
 
 document.addEventListener('DOMContentLoaded', () => {
     showPopup();
@@ -95,8 +98,6 @@ function showPopup() {
     progressContainer.style.display = 'none';
 }
 
-
-
 function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(showPosition);
@@ -109,7 +110,8 @@ function initializeCentralMap() {
     const mapContainer = document.getElementById('centralMap');
     map = L.map(mapContainer).setView([49.233, 7.0], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' +
+            'contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 18
     }).addTo(map);
 }
@@ -191,7 +193,8 @@ function addPOIToList(poi, orderDefined) {
         label.innerHTML = `${poi.name}`;
         label.addEventListener('click', function () {
             if (poi.found && !poi.active) {
-                const proceed = confirm(`${poi.name} wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?`);
+                const proceed = confirm
+                (`${poi.name} wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?`);
                 if (proceed) {
                     activatePoi(poi, label);
                 }
@@ -217,7 +220,9 @@ function activatePoi(poi, label) {
         if (poiCircles[poi.order]) {
             map.addLayer(poiCircles[poi.order]);
         } else {
-            poiCircles[poi.order] = drawCircle(poi.order, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)], CIRCLE_RADIUS, poi.name);
+            poiCircles[poi.order] = drawCircle(poi.order,
+                [Number(`${poi.x_coordinate}`),
+                    Number(`${poi.y_coordinate}`)], CIRCLE_RADIUS, poi.name);
         }
     } else {
         audioElements[poi.order].pause();
@@ -235,7 +240,8 @@ function playAudio(poi) {
     function playAndPause() {
         if (userPosition && poi.active) {
             const distanceToPoi = getDistance(userPosition,
-                [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
+                [Number(`${poi.x_coordinate}`),
+                    Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
             const distanceToCircleCenter = getDistance(userPosition, randomCircleCenter[poi.order]) * 1000;
 
             if (distanceToCircleCenter <= CIRCLE_RADIUS) {
@@ -246,11 +252,12 @@ function playAudio(poi) {
                         setTimeout(() => {
                             audioElements[poi.order].pause();
                             isPlaying = false;
-                        }, 3000);
+                        }, loopInterval * 1000);
                     });
                 }
 
-                updatePannerPosition(poi.order, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
+                updatePannerPosition(poi.order,
+                    [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
 
                 const maxVolume = 1.0;
                 const minVolume = 0.1;
@@ -270,7 +277,6 @@ function playAudio(poi) {
     audioIntervals[poi.order] = setInterval(playAndPause, 50);
 }
 
-
 function updatePannerPosition(order, poiPosition) {
     if (userPosition && pannerNodes[order]) {
         const x = poiPosition[1] - userPosition[1]; // longitude difference
@@ -278,7 +284,6 @@ function updatePannerPosition(order, poiPosition) {
         pannerNodes[order].setPosition(x, 0, z);
     }
 }
-
 
 function updatePOIColor(poi, label) {
     if (poi.active) {
@@ -347,7 +352,8 @@ function adjustViewToIncludeAllCircles() {
 function checkUserInProximity(poi, label) {
     setInterval(() => {
         if (userPosition && poi.active) {
-            const distance = getDistance(userPosition, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
+            const distance = getDistance(userPosition,
+                [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
             if (distance <= PROXIMITY_RADIUS) {
                 poi.found = true;
                 poi.active = false;
@@ -419,7 +425,7 @@ function toggleSidebar() {
 
 function toggleAutoAlignMap() {
     autoAlignMap = !autoAlignMap;
-    const button = document.querySelector('#sidebar a:nth-child(1)');
+    const button = document.querySelector('#sidebar a:nth-child(2)');
 
     if (autoAlignMap) {
         button.style.color = 'lightgreen';
@@ -427,6 +433,17 @@ function toggleAutoAlignMap() {
     } else {
         button.style.color = 'lightcoral';
         button.textContent = 'Karte automatisch bewegen';
+    }
+}
+
+function setLoopInterval() {
+    const audioInterval = document.getElementById('loopIntervalInput');
+    if (audioInterval.value === '') {
+        alert("Es wurde keine Zahl eingegeben.")
+    } else if (parseInt(audioInterval.value, 10) <= 0) {
+        alert("Das Intervall muss positiv sein.")
+    } else {
+        loopInterval = parseInt(audioInterval.value, 10);
     }
 }
 
@@ -466,7 +483,6 @@ function deleteRecentUsecases() {
         localStorage.removeItem('recent_usecases');
         location.reload();
     }
-
 }
 
 function leaveUsecase() {
