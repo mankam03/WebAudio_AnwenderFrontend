@@ -1,6 +1,6 @@
 const CIRCLE_RADIUS = 500;              // radius of circle on map (meter)
 const PROXIMITY_RADIUS = 30 / 1000;     // first number: how near (meter) user must be to trigger found poi
-const SERVER_URL = "../api";
+const SERVER_URL = "../api";            // location of all uberspace routes, e.g. ../api/accounts
 
 let usecase_id;
 let pois = [];
@@ -128,8 +128,8 @@ function loadPois() {
                 pois.push(poi);
                 addPOIToList(poi, orderDefined);
 
-                // audio only thing that currently is not connected to database (currently local file)
-                const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);
+                // const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);     // lokal mp3 laden
+                const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`)
                 audioElement.loop = true;
                 audioElements[poi.order] = audioElement;
 
