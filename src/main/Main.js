@@ -1,6 +1,7 @@
 const CIRCLE_RADIUS = 500;              // radius of circle on map (meter)
 const PROXIMITY_RADIUS = 30 / 1000;     // first number: how near (meter) user must be to trigger found poi
 const SERVER_URL = "../api";            // location of all uberspace routes, e.g. ../api/accounts
+//const SERVER_URL = "http://mankam.ddns.net:4000"
 
 let usecase_id;
 let pois = [];
@@ -13,26 +14,15 @@ let userMarker = null;
 let poiCircles = {};
 let orderDefined;
 let randomCircleCenter = [];
+let audioIntervals = [];
 let autoAlignMap = true;
 
 
-async function submitUseCaseId(id) {
-
+function submitUseCaseId() {
     const progressContainer = document.getElementById('progressContainer');
     progressContainer.style.display = 'none';
 
-    const warning = document.getElementById('audioWarning');
-    const confirm = document.getElementById('audioConfirm');
-    if (id) {
-        usecase_id = id;
-        await new Promise((resolve) => {
-            confirm.onclick = () => resolve();
-        });
-    } else {
-        usecase_id = document.getElementById('useCaseIdInput').value;
-    }
-    warning.style.display = 'none';
-    confirm.style.display = 'none';
+    usecase_id = document.getElementById('useCaseIdInput').value;
 
     if (usecase_id === '') {
         alert("Keine Anwendungszwecknummer angegeben");
@@ -50,7 +40,6 @@ async function submitUseCaseId(id) {
             }
 
             usecases.forEach(usecase => {
-
                 const titelAnwendungszweckElement = document.getElementById("titelAnwendungszweck");
                 titelAnwendungszweckElement.innerHTML = `${usecase.titel} (#${usecase.id})`;
 
@@ -61,6 +50,7 @@ async function submitUseCaseId(id) {
             });
 
             localStorage.setItem('current_usecase_id', usecase_id);
+            updateRecentUsecases(usecase_id); // Update recent use cases list
             getLocation();
             initializeCentralMap();
             loadPois();
@@ -82,13 +72,9 @@ async function submitUseCaseId(id) {
     popup.style.display = 'none';
 }
 
+
 document.addEventListener('DOMContentLoaded', () => {
-    const storedUseCaseId = localStorage.getItem('current_usecase_id');
-    if (storedUseCaseId) {
-        submitUseCaseId(storedUseCaseId);
-    } else {
-        showPopup();
-    }
+    showPopup();
 });
 
 function showPopup() {
@@ -97,9 +83,19 @@ function showPopup() {
     overlay.style.display = 'block';
     popup.style.display = 'block';
 
+    const storedUseCaseId = localStorage.getItem('current_usecase_id');
+    if (storedUseCaseId) {
+        const useCaseIdInput = document.getElementById('useCaseIdInput');
+        useCaseIdInput.value = storedUseCaseId;
+    }
+
+    showRecentUsecases();
+
     const progressContainer = document.getElementById('progressContainer');
     progressContainer.style.display = 'none';
 }
+
+
 
 function getLocation() {
     if (navigator.geolocation) {
@@ -128,9 +124,8 @@ function loadPois() {
                 pois.push(poi);
                 addPOIToList(poi, orderDefined);
 
-                // const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);     // lokal mp3 laden
-                const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`)
-                audioElement.loop = true;
+                //const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);
+                const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`);
                 audioElements[poi.order] = audioElement;
 
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -235,13 +230,26 @@ function activatePoi(poi, label) {
 
 function playAudio(poi) {
     audioContexts[poi.order].resume();
-    setInterval(() => {
+    let isPlaying = false;
+
+    function playAndPause() {
         if (userPosition && poi.active) {
-            const distanceToPoi = getDistance(userPosition, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
+            const distanceToPoi = getDistance(userPosition,
+                [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
             const distanceToCircleCenter = getDistance(userPosition, randomCircleCenter[poi.order]) * 1000;
 
             if (distanceToCircleCenter <= CIRCLE_RADIUS) {
-                audioElements[poi.order].play();
+                if (!isPlaying) {
+                    audioElements[poi.order].play();
+                    isPlaying = true;
+                    audioElements[poi.order].addEventListener('ended', () => {
+                        setTimeout(() => {
+                            audioElements[poi.order].pause();
+                            isPlaying = false;
+                        }, 3000);
+                    });
+                }
+
                 updatePannerPosition(poi.order, [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
 
                 const maxVolume = 1.0;
@@ -250,9 +258,16 @@ function playAudio(poi) {
                 audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
             } else {
                 audioElements[poi.order].pause();
+                isPlaying = false;
             }
+        } else {
+            audioElements[poi.order].pause();
+            isPlaying = false;
         }
-    }, 500); // check every 0.5 seconds
+    }
+
+    clearInterval(audioIntervals[poi.order]);
+    audioIntervals[poi.order] = setInterval(playAndPause, 50);
 }
 
 
@@ -415,7 +430,45 @@ function toggleAutoAlignMap() {
     }
 }
 
+function updateRecentUsecases(usecase_id) {
+    let recentUseCases = JSON.parse(localStorage.getItem('recent_usecases')) || [];
+    recentUseCases = recentUseCases.filter(id => id !== usecase_id);
+    recentUseCases.unshift(usecase_id);
+    if (recentUseCases.length > 5) {
+        recentUseCases.pop();
+    }
+    localStorage.setItem('recent_usecases', JSON.stringify(recentUseCases));
+}
+
+function showRecentUsecases() {
+    const recentUseCases = JSON.parse(localStorage.getItem('recent_usecases')) || [];
+    const recentUseCasesList = document.getElementById('recentUseCasesList');
+
+    recentUseCasesList.innerHTML = '';
+
+    if (recentUseCases.length === 0) {
+        recentUseCasesList.innerHTML = '<li>Keine vorhanden</li>';
+    } else {
+        recentUseCases.forEach(id => {
+            const li = document.createElement('li');
+            li.textContent = id;
+            li.addEventListener('click', () => {
+                document.getElementById('useCaseIdInput').value = id;
+            });
+            recentUseCasesList.appendChild(li);
+        });
+    }
+}
+
+function deleteRecentUsecases() {
+    if (confirm("Die zuletzt aufgerufen Anwendungszwecke werden aus der Liste endgültig entfernt. " +
+        "Trotzdem löschen?")) {
+        localStorage.removeItem('recent_usecases');
+        location.reload();
+    }
+
+}
+
 function leaveUsecase() {
-    localStorage.removeItem('current_usecase_id');
     location.reload()
 }
