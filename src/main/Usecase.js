@@ -77,9 +77,9 @@ function submitUseCaseId() {
 
             localStorage.setItem('current_usecase_id', usecase_id);
             storage.updateRecentUsecases(usecase_id);
-            usecase.getLocation();
-            usecase.initializeCentralMap();
-            usecase.loadPois();
+            getLocation();
+            initializeCentralMap();
+            loadPois();
 
             const progressContainer = document.getElementById('progressContainer');
             progressContainer.style.display = 'block';
@@ -109,27 +109,27 @@ export function getLocation() {
 
 export function initializeCentralMap() {
     const mapContainer = document.getElementById('centralMap');
-    usecase.map = L.map(mapContainer).setView([49.233, 7.0], 13);
+    map = L.map(mapContainer).setView([49.233, 7.0], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' +
             'contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 18
-    }).addTo(usecase.map());
+    }).addTo(map);
 }
 
 export function loadPois() {
-    fetch(usecase.SERVER_URL + `/usecases/${usecase.usecase_id}/pois`)
+    fetch(SERVER_URL + `/usecases/${usecase_id}/pois`)
         .then(response => response.json())
         .then(data => {
             data.forEach(poi => {
                 poi.active = false;
                 poi.found = false;
-                usecase.pois.push(poi);
-                addPOIToList(poi, usecase.orderDefined);
+                pois.push(poi);
+                addPOIToList(poi, orderDefined);
 
                 //const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);
                 const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`);
-                usecase.audioElements[poi.order] = audioElement;
+                audioElements[poi.order] = audioElement;
 
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const pannerNode = audioContext.createPanner();
@@ -142,13 +142,13 @@ export function loadPois() {
                 const source = audioContext.createMediaElementSource(audioElement);
                 source.connect(pannerNode).connect(audioContext.destination);
 
-                usecase.audioContexts[poi.order] = audioContext;
-                usecase.pannerNodes[poi.order] = pannerNode;
+                audioContexts[poi.order] = audioContext;
+                pannerNodes[poi.order] = pannerNode;
             });
 
             updateProgressBar();
 
-            if (usecase.orderDefined) {
+            if (orderDefined) {
                 activateNextUnfoundPoi();
             }
 
@@ -159,8 +159,8 @@ export function loadPois() {
 }
 
 function updateProgressBar() {
-    const totalPois = usecase.pois.length;
-    const visitedPois = usecase.pois.filter(poi => poi.found).length;
+    const totalPois = pois.length;
+    const visitedPois = pois.filter(poi => poi.found).length;
     const progress = (visitedPois / totalPois) * 100;
 
     const progressBar = document.getElementById("progressBar");
@@ -169,7 +169,7 @@ function updateProgressBar() {
 }
 
 function activateNextUnfoundPoi() {
-    for (let poi of usecase.pois) {
+    for (let poi of pois) {
         if (!poi.found) {
             const poiList = document.getElementById('poiList');
             const labels = poiList.getElementsByTagName('label');
@@ -218,40 +218,40 @@ function activatePoi(poi, label) {
     updatePOIColor(poi, label);
     if (poi.active) {
         playAudio(poi);
-        if (usecase.poiCircles[poi.order]) {
-            usecase.map().addLayer(usecase.poiCircles[poi.order]);
+        if (poiCircles[poi.order]) {
+            map.addLayer(poiCircles[poi.order]);
         } else {
-            usecase.poiCircles[poi.order] = drawCircle(poi.order,
+            poiCircles[poi.order] = drawCircle(poi.order,
                 [Number(`${poi.x_coordinate}`),
                     Number(`${poi.y_coordinate}`)], CIRCLE_RADIUS, poi.name);
         }
     } else {
-        usecase.audioElements[poi.order].pause();
-        if (usecase.poiCircles[poi.order]) {
-            usecase.map().removeLayer(usecase.poiCircles[poi.order]);
+        audioElements[poi.order].pause();
+        if (poiCircles[poi.order]) {
+            map.removeLayer(poiCircles[poi.order]);
         }
     }
     adjustViewToIncludeAllCircles();
 }
 
 function playAudio(poi) {
-    usecase.audioContexts[poi.order].resume();
+    audioContexts[poi.order].resume();
     let isPlaying = false;
 
     function playAndPause() {
-        if (usecase.userPosition && poi.active) {
-            const distanceToPoi = getDistance(usecase.userPosition,
+        if (userPosition && poi.active) {
+            const distanceToPoi = getDistance(userPosition,
                 [Number(`${poi.x_coordinate}`),
                     Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
-            const distanceToCircleCenter = getDistance(usecase.userPosition, usecase.randomCircleCenter[poi.order]) * 1000;
+            const distanceToCircleCenter = getDistance(userPosition, randomCircleCenter[poi.order]) * 1000;
 
             if (distanceToCircleCenter <= CIRCLE_RADIUS) {
                 if (!isPlaying) {
-                    usecase.audioElements[poi.order].play();
+                    audioElements[poi.order].play();
                     isPlaying = true;
-                    usecase.audioElements[poi.order].addEventListener('ended', () => {
+                    audioElements[poi.order].addEventListener('ended', () => {
                         setTimeout(() => {
-                            usecase.audioElements[poi.order].pause();
+                            audioElements[poi.order].pause();
                             isPlaying = false;
                         }, sidebar.loopInterval * 1000);
                     });
@@ -263,26 +263,26 @@ function playAudio(poi) {
                 const maxVolume = 1.0;
                 const minVolume = 0.1;
                 const volume = 1.0 - (distanceToPoi / CIRCLE_RADIUS);
-                usecase.audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
+                audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
             } else {
-                usecase.audioElements[poi.order].pause();
+                audioElements[poi.order].pause();
                 isPlaying = false;
             }
         } else {
-            usecase.audioElements[poi.order].pause();
+            audioElements[poi.order].pause();
             isPlaying = false;
         }
     }
 
-    clearInterval(usecase.audioIntervals[poi.order]);
-    usecase.audioIntervals[poi.order] = setInterval(playAndPause, 50);
+    clearInterval(audioIntervals[poi.order]);
+    audioIntervals[poi.order] = setInterval(playAndPause, 50);
 }
 
 function updatePannerPosition(order, poiPosition) {
-    if (usecase.userPosition && usecase.pannerNodes[order]) {
-        const x = poiPosition[1] - usecase.userPosition[1]; // longitude difference
-        const z = usecase.userPosition[0] - poiPosition[0]; // latitude difference
-        usecase.pannerNodes[order].setPosition(x, 0, z);
+    if (userPosition && pannerNodes[order]) {
+        const x = poiPosition[1] - userPosition[1]; // longitude difference
+        const z = userPosition[0] - poiPosition[0]; // latitude difference
+        pannerNodes[order].setPosition(x, 0, z);
     }
 }
 
@@ -303,9 +303,9 @@ function drawCircle(poi_order, center, radius, poi_name) {
         fillColor: '#30f',
         fillOpacity: 0.2,
         radius: radius
-    }).addTo(usecase.map());
+    }).addTo(map);
     circle.bindPopup(poi_name);
-    usecase.randomCircleCenter[poi_order] = randomizedCoordinates;
+    randomCircleCenter[poi_order] = randomizedCoordinates;
     return circle;
 }
 
@@ -324,47 +324,47 @@ function getRandomizedCoordinates(center, radius) {
 }
 
 function showPosition(position) {
-    usecase.userPosition = [position.coords.latitude, position.coords.longitude];
-    if (usecase.userMarker) {
-        usecase.userMarker.setLatLng(usecase.userPosition);
+    userPosition = [position.coords.latitude, position.coords.longitude];
+    if (userMarker) {
+        userMarker.setLatLng(userPosition);
     } else {
-        usecase.userMarker = L.marker(usecase.userPosition).addTo(usecase.map()).bindPopup('Ihre Position');
+        userMarker = L.marker(userPosition).addTo(map).bindPopup('Ihre Position');
     }
 
     adjustViewToIncludeAllCircles();
 }
 
 function adjustViewToIncludeAllCircles() {
-    const activeCircles = Object.values(usecase.poiCircles).filter(circle => usecase.map().hasLayer(circle));
+    const activeCircles = Object.values(poiCircles).filter(circle => map.hasLayer(circle));
     if (activeCircles.length > 0 && sidebar.autoAlignMap) {
         const bounds = L.latLngBounds(activeCircles.map(circle => circle.getLatLng()));
         activeCircles.forEach(circle => {
             bounds.extend(circle.getBounds());
         });
-        if (usecase.userMarker) {
-            bounds.extend(usecase.userMarker.getLatLng());
+        if (userMarker) {
+            bounds.extend(userMarker.getLatLng());
         }
-        usecase.map().fitBounds(bounds, {padding: [50, 50]});
-    } else if (usecase.userMarker && sidebar.autoAlignMap) {
-        usecase.map().setView(usecase.userMarker.getLatLng(), 13);
+        map.fitBounds(bounds, {padding: [50, 50]});
+    } else if (userMarker && sidebar.autoAlignMap) {
+        map.setView(userMarker.getLatLng(), 13);
     }
 }
 
 function checkUserInProximity(poi, label) {
     setInterval(() => {
-        if (usecase.userPosition && poi.active) {
-            const distance = getDistance(usecase.userPosition,
+        if (userPosition && poi.active) {
+            const distance = getDistance(userPosition,
                 [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
             if (distance <= PROXIMITY_RADIUS) {
                 poi.found = true;
                 poi.active = false;
                 updatePOIColor(poi, label);
-                usecase.map().removeLayer(usecase.poiCircles[poi.order]);
-                usecase.audioElements[poi.order].pause();
+                map.removeLayer(poiCircles[poi.order]);
+                audioElements[poi.order].pause();
                 storage.saveProgress(poi);
                 updateProgressBar();
                 alert(`Sie haben ${poi.name} gefunden`);
-                if (usecase.orderDefined) {
+                if (orderDefined) {
                     activateNextUnfoundPoi();
                 }
             }
