@@ -28,11 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadSidebar() {
     const openSidebarButton = document.getElementById('openSidebarButton');
+    const autoALignButton = document.getElementById('autoAlignButton');
     const setIntervalButton = document.getElementById('setIntervalButton');
     const deleterecentUsecases = document.getElementById('deleteRecentUsecases');
     const resetProgress = document.getElementById('resetProgress');
     const leaveUsecase = document.getElementById('leaveUsecase');
     openSidebarButton.addEventListener('click', sidebar.toggleSidebar);
+    autoALignButton.addEventListener('click', sidebar.autoAlignMap);
     setIntervalButton.addEventListener('click', sidebar.setLoopInterval);
     deleterecentUsecases.addEventListener('click', sidebar.deleteRecentUsecases);
     resetProgress.addEventListener('click', sidebar.resetProgress)
