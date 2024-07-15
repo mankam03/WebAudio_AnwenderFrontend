@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadSidebar() {
     const openSidebarButton = document.getElementById('openSidebarButton');
     const setIntervalButton = document.getElementById('setIntervalButton');
-    const deleterecentUsecases = documennt.getElementById('deleteRecentUsecases');
+    const deleterecentUsecases = document.getElementById('deleteRecentUsecases');
     const resetProgress = document.getElementById('resetProgress');
     const leaveUsecase = document.getElementById('leaveUsecase');
     openSidebarButton.addEventListener('click', sidebar.toggleSidebar);
