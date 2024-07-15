@@ -22,6 +22,8 @@ const PROXIMITY_RADIUS = 20 / 1000;     // first number: how near (meter) user m
 
 document.addEventListener('DOMContentLoaded', () => {
     showPopup();
+    const openSidebarButton = document.getElementById('openSidebarButton');
+    openSidebarButton.addEventListener('click', sidebar.toggleSidebar);
 });
 
 function showPopup() {
