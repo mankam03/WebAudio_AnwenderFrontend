@@ -25,7 +25,7 @@
 
 <div class="header">
     <h1 id="titelAnwendungszweck"></h1>
-    <button id="openSidebarButton" onclick="toggleSidebar()">☰</button>
+    <button id="openSidebarButton" onclick="sidebar.toggleSidebar()">☰</button>
 </div>
 
 <div class="content">
@@ -47,10 +47,10 @@
                 <button id="setIntervalButton" onclick="setLoopInterval()">OK</button>
             </div>
         </div>
-        <a href="#" onclick="toggleAutoAlignMap()" id="autoAlignButton">Karte automatisch bewegen</a>
-        <a href="#" onclick="deleteRecentUsecases()">Zuletzt aufgerufene Anwendungszwecke aus Liste entfernen</a>
-        <a href="#" onclick="resetProgress()">Fortschritt des Anwendungszweckes zurücksetzen</a>
-        <a href="#" onclick="leaveUsecase()">Fortschritt speichern und Anwendungszweck verlassen</a>
+        <a href="#" onclick="sidebar.toggleAutoAlignMap()" id="autoAlignButton">Karte automatisch bewegen</a>
+        <a href="#" onclick="sidebar.deleteRecentUsecases()">Zuletzt aufgerufene Anwendungszwecke aus Liste entfernen</a>
+        <a href="#" onclick="sidebar.resetProgress()">Fortschritt des Anwendungszweckes zurücksetzen</a>
+        <a href="#" onclick="sidebar.leaveUsecase()">Fortschritt speichern und Anwendungszweck verlassen</a>
     </div>
 
     <script type="module" src="src/main/Usecase.js"></script>

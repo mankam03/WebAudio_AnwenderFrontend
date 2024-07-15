@@ -1,8 +1,9 @@
+// Sidebar.js
+
 import * as usecase from './Usecase.js'
 
 export let autoAlignMap = true;
 export let loopInterval = 3;       // in seconds, default value
-
 
 export function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
