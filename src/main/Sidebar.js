@@ -4,7 +4,7 @@ export let autoAlignMap = true;
 export let loopInterval = 3;       // in seconds, default value
 
 
-function toggleSidebar() {
+export function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     if (sidebar.style.width === '250px') {
         sidebar.style.width = '0';
@@ -13,7 +13,7 @@ function toggleSidebar() {
     }
 }
 
-function setLoopInterval() {
+export function setLoopInterval() {
     const audioInterval = document.getElementById('loopIntervalInput');
     if (audioInterval.value === '') {
         alert("Es wurde keine Zahl eingegeben.")
@@ -24,7 +24,7 @@ function setLoopInterval() {
     }
 }
 
-function toggleAutoAlignMap() {
+export function toggleAutoAlignMap() {
     autoAlignMap = !autoAlignMap;
     const button = document.querySelector('#sidebar a:nth-child(2)');
 
@@ -37,14 +37,14 @@ function toggleAutoAlignMap() {
     }
 }
 
-function resetProgress() {
+export function resetProgress() {
     if (confirm("Der Fortschritt für diesen Anwendungszweck geht für immer verloren. Trotzdem zurücksetzen?")) {
         localStorage.removeItem(`usecase_${usecase.usecase_id}_foundPois`);
         location.reload();
     }
 }
 
-function deleteRecentUsecases() {
+export function deleteRecentUsecases() {
     if (confirm("Die zuletzt aufgerufen Anwendungszwecke werden aus der Liste endgültig entfernt. " +
         "Trotzdem löschen?")) {
         localStorage.removeItem('recent_usecases');
@@ -52,6 +52,6 @@ function deleteRecentUsecases() {
     }
 }
 
-function leaveUsecase() {
+export function leaveUsecase() {
     location.reload()
 }
