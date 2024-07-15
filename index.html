@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anwendungszweck</title>
-    <link rel="stylesheet" href="src/main/styles.css">
+    <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 </head>
@@ -44,13 +44,13 @@
             <label for="loopIntervalInput">Audio-Loop-Intervall (sec):</label>
             <div class="input-container">
                 <input type="number" id="loopIntervalInput" value="3" min="0" step="1">
-                <button id="setIntervalButton" onclick="setLoopInterval()">OK</button>
+                <button id="setIntervalButton">OK</button>
             </div>
         </div>
-        <a href="#" onclick="sidebar.toggleAutoAlignMap()" id="autoAlignButton">Karte automatisch bewegen</a>
-        <a href="#" onclick="sidebar.deleteRecentUsecases()">Zuletzt aufgerufene Anwendungszwecke aus Liste entfernen</a>
-        <a href="#" onclick="sidebar.resetProgress()">Fortschritt des Anwendungszweckes zurücksetzen</a>
-        <a href="#" onclick="sidebar.leaveUsecase()">Fortschritt speichern und Anwendungszweck verlassen</a>
+        <a href="#" id="autoAlignButton">Karte automatisch bewegen</a>
+        <a href="#" id="deleteRecentUsecases">Zuletzt aufgerufene Anwendungszwecke aus Liste entfernen</a>
+        <a href="#" id="resetProgress">Fortschritt des Anwendungszweckes zurücksetzen</a>
+        <a href="#" id="leaveUsecase">Fortschritt speichern und Anwendungszweck verlassen</a>
     </div>
 
     <script type="module" src="src/main/Usecase.js"></script>

@@ -1,5 +1,6 @@
 import * as sidebar from './Sidebar.js';
 import * as storage from './Storage.js';
+import {toggleAutoAlignMap, toggleSidebar} from "./Sidebar.js";
 
 export const SERVER_URL = "../api";
 // export const SERVER_URL = "http://mankam.ddns.net:4000"
@@ -22,9 +23,21 @@ const PROXIMITY_RADIUS = 20 / 1000;     // first number: how near (meter) user m
 
 document.addEventListener('DOMContentLoaded', () => {
     showPopup();
-    const openSidebarButton = document.getElementById('openSidebarButton');
-    openSidebarButton.addEventListener('click', sidebar.toggleSidebar);
+    loadSidebar();
 });
+
+function loadSidebar() {
+    const openSidebarButton = document.getElementById('openSidebarButton');
+    const setIntervalButton = document.getElementById('setIntervalButton');
+    const deleterecentUsecases = documennt.getElementById('deleteRecentUsecases');
+    const resetProgress = document.getElementById('resetProgress');
+    const leaveUsecase = document.getElementById('leaveUsecase');
+    openSidebarButton.addEventListener('click', sidebar.toggleSidebar);
+    setIntervalButton.addEventListener('click', sidebar.setLoopInterval);
+    deleterecentUsecases.addEventListener('click', sidebar.deleteRecentUsecases);
+    resetProgress.addEventListener('click', sidebar.resetProgress)
+    leaveUsecase.addEventListener('click', sidebar.leaveUsecase);
+}
 
 function showPopup() {
     const overlay = document.getElementById('overlay');
