@@ -34,7 +34,7 @@ function loadSidebar() {
     const resetProgress = document.getElementById('resetProgress');
     const leaveUsecase = document.getElementById('leaveUsecase');
     openSidebarButton.addEventListener('click', sidebar.toggleSidebar);
-    autoALignButton.addEventListener('click', sidebar.autoAlignMap);
+    autoALignButton.addEventListener('click', sidebar.toggleAutoAlignMap);
     setIntervalButton.addEventListener('click', sidebar.setLoopInterval);
     deleterecentUsecases.addEventListener('click', sidebar.deleteRecentUsecases);
     resetProgress.addEventListener('click', sidebar.resetProgress)
