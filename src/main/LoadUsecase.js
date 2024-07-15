@@ -98,3 +98,8 @@ function submitUseCaseId() {
 
 // Global verfügbar machen
 window.submitUseCaseId = submitUseCaseId;
+
+// Hilfsmethoden, damit Module funktionieren
+export function setMap(map) {
+    this.map = map;
+}

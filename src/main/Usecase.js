@@ -16,7 +16,7 @@ export function getLocation() {
 
 export function initializeCentralMap() {
     const mapContainer = document.getElementById('centralMap');
-    usecase.map = L.map(mapContainer).setView([49.233, 7.0], 13);
+    usecase.setMap(L.map(mapContainer).setView([49.233, 7.0], 13));
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' +
             'contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
