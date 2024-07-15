@@ -97,6 +97,7 @@ function submitUseCaseId() {
     overlay.style.display = 'none';
     popup.style.display = 'none';
 }
+window.submitUseCaseId = submitUseCaseId;
 
 export function getLocation() {
     if (navigator.geolocation) {
