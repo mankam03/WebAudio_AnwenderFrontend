@@ -9,7 +9,7 @@ export let pois = [];
 export let audioElements = [];
 export let audioContexts = [];
 export let pannerNodes = [];
-export let map;
+let map;
 export let userPosition = null;
 export let userMarker = null;
 export let poiCircles = {};
@@ -102,4 +102,8 @@ window.submitUseCaseId = submitUseCaseId;
 // Hilfsmethoden, damit Module funktionieren
 export function setMap(map) {
     this.map = map;
+}
+
+export function getMap() {
+    return map;
 }
