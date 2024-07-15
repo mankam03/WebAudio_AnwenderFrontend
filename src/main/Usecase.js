@@ -21,7 +21,7 @@ export function initializeCentralMap() {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' +
             'contributors &amp; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 18
-    }).addTo(usecase.map);
+    }).addTo(usecase.getMap());
 }
 
 export function loadPois() {
@@ -126,7 +126,7 @@ function activatePoi(poi, label) {
     if (poi.active) {
         playAudio(poi);
         if (usecase.poiCircles[poi.order]) {
-            usecase.map.addLayer(usecase.poiCircles[poi.order]);
+            usecase.getMap().addLayer(usecase.poiCircles[poi.order]);
         } else {
             usecase.poiCircles[poi.order] = drawCircle(poi.order,
                 [Number(`${poi.x_coordinate}`),
@@ -135,7 +135,7 @@ function activatePoi(poi, label) {
     } else {
         usecase.audioElements[poi.order].pause();
         if (usecase.poiCircles[poi.order]) {
-            usecase.map.removeLayer(usecase.poiCircles[poi.order]);
+            usecase.getMap().removeLayer(usecase.poiCircles[poi.order]);
         }
     }
     adjustViewToIncludeAllCircles();
@@ -210,7 +210,7 @@ function drawCircle(poi_order, center, radius, poi_name) {
         fillColor: '#30f',
         fillOpacity: 0.2,
         radius: radius
-    }).addTo(usecase.map);
+    }).addTo(usecase.getMap());
     circle.bindPopup(poi_name);
     usecase.randomCircleCenter[poi_order] = randomizedCoordinates;
     return circle;
@@ -235,14 +235,14 @@ function showPosition(position) {
     if (usecase.userMarker) {
         usecase.userMarker.setLatLng(usecase.userPosition);
     } else {
-        usecase.userMarker = L.marker(usecase.userPosition).addTo(usecase.map).bindPopup('Ihre Position');
+        usecase.userMarker = L.marker(usecase.userPosition).addTo(usecase.getMap()).bindPopup('Ihre Position');
     }
 
     adjustViewToIncludeAllCircles();
 }
 
 function adjustViewToIncludeAllCircles() {
-    const activeCircles = Object.values(usecase.poiCircles).filter(circle => usecase.map.hasLayer(circle));
+    const activeCircles = Object.values(usecase.poiCircles).filter(circle => usecase.getMap().hasLayer(circle));
     if (activeCircles.length > 0 && sidebar.autoAlignMap) {
         const bounds = L.latLngBounds(activeCircles.map(circle => circle.getLatLng()));
         activeCircles.forEach(circle => {
@@ -251,9 +251,9 @@ function adjustViewToIncludeAllCircles() {
         if (usecase.userMarker) {
             bounds.extend(usecase.userMarker.getLatLng());
         }
-        usecase.map.fitBounds(bounds, {padding: [50, 50]});
+        usecase.getMap().fitBounds(bounds, {padding: [50, 50]});
     } else if (usecase.userMarker && sidebar.autoAlignMap) {
-        usecase.map.setView(usecase.userMarker.getLatLng(), 13);
+        usecase.getMap().setView(usecase.userMarker.getLatLng(), 13);
     }
 }
 
@@ -266,7 +266,7 @@ function checkUserInProximity(poi, label) {
                 poi.found = true;
                 poi.active = false;
                 updatePOIColor(poi, label);
-                usecase.map.removeLayer(usecase.poiCircles[poi.order]);
+                usecase.getMap().removeLayer(usecase.poiCircles[poi.order]);
                 usecase.audioElements[poi.order].pause();
                 storage.saveProgress(poi);
                 updateProgressBar();
