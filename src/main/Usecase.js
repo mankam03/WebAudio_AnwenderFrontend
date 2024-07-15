@@ -1,31 +1,35 @@
 import * as sidebar from './Sidebar.js';
 import * as storage from './Storage.js';
-import {toggleAutoAlignMap, toggleSidebar} from "./Sidebar.js";
 
-export const SERVER_URL = "../api";
-// export const SERVER_URL = "http://mankam.ddns.net:4000"
+export const SERVER_URL = "../api";        // url of rest api calls
+const CIRCLE_RADIUS = 500;               // radius of circle on map in meters
+const PROXIMITY_RADIUS = 20 / 1000;      // first number: how near in meters user must be to trigger found poi
 
 export let usecase_id;
+export let orderDefined;
+export let map;
+export let userPosition;
+export let userMarker;
+export let poiCircles = {};
 export let pois = [];
 export let audioElements = [];
 export let audioContexts = [];
 export let pannerNodes = [];
-export let map;
-export let userPosition = null;
-export let userMarker = null;
-export let poiCircles = {};
-export let orderDefined;
 export let randomCircleCenter = [];
 export let audioIntervals = [];
 
-const CIRCLE_RADIUS = 500;              // radius of circle on map (meter)
-const PROXIMITY_RADIUS = 20 / 1000;     // first number: how near (meter) user must be to trigger found poi
 
+/**
+ * call functions to initialize usecase
+ */
 document.addEventListener('DOMContentLoaded', () => {
     showPopup();
     loadSidebar();
 });
 
+/**
+ * get all sidebar elements and make them clickable with the appropriate function call
+ */
 function loadSidebar() {
     const openSidebarButton = document.getElementById('openSidebarButton');
     const autoALignButton = document.getElementById('autoAlignButton');
@@ -41,36 +45,43 @@ function loadSidebar() {
     leaveUsecase.addEventListener('click', sidebar.leaveUsecase);
 }
 
+/**
+ * show initial popup, which lets the use enter the usecase id
+ */
 function showPopup() {
+
+    // show overlay and hide elements behind popup
     const overlay = document.getElementById('overlay');
     const popup = document.getElementById('useCaseIdPopup');
+    const progressContainer = document.getElementById('progressContainer');
     overlay.style.display = 'block';
     popup.style.display = 'block';
+    progressContainer.style.display = 'none';
 
+    // if available in local storage, auto fill last recently used usecase id in text field
     const storedUseCaseId = localStorage.getItem('current_usecase_id');
     if (storedUseCaseId) {
         const useCaseIdInput = document.getElementById('useCaseIdInput');
         useCaseIdInput.value = storedUseCaseId;
     }
-
     storage.showRecentUsecases();
 
-    const progressContainer = document.getElementById('progressContainer');
-    progressContainer.style.display = 'none';
 }
 
+/**
+ * when submitting the entered usecase id, check if usecase is available and fetch it from database
+ */
 function submitUseCaseId() {
-    const progressContainer = document.getElementById('progressContainer');
-    progressContainer.style.display = 'none';
 
+    // check if usecase id is given
     usecase_id = document.getElementById('useCaseIdInput').value;
-
     if (usecase_id === '') {
         alert("Keine Anwendungszwecknummer angegeben");
         showPopup();
         return;
     }
 
+    // check if usecaseid is available and then gather all usecase information
     fetch(`${SERVER_URL}/usecases/${usecase_id}`)
         .then(response => response.json())
         .then(usecases => {
@@ -80,28 +91,18 @@ function submitUseCaseId() {
                 return;
             }
 
-            usecases.forEach(usecase => {
-                const titelAnwendungszweckElement =
-                    document.getElementById("titelAnwendungszweck");
-                titelAnwendungszweckElement.innerHTML = `${usecase.titel} (#${usecase.id})`;
-
-                const beschreibungAnwendungszweckElement =
-                    document.getElementById("beschreibungAnwendungszweck");
-                beschreibungAnwendungszweckElement.innerHTML = usecase.beschreibung;
-
-                orderDefined = usecase.fixed_order === 1;
-            });
-
+            // if here, usecase is available, so call appropriate functions to start application
+            loadUsecase(usecases);
             localStorage.setItem('current_usecase_id', usecase_id);
             storage.updateRecentUsecases(usecase_id);
             getLocation();
             initializeCentralMap();
             loadPois();
 
+            // show previosly hidden elements again
             const progressContainer = document.getElementById('progressContainer');
-            progressContainer.style.display = 'block';
-
             const sidebarButton = document.getElementById('openSidebarButton');
+            progressContainer.style.display = 'block';
             sidebarButton.style.display = 'block';
 
         })
@@ -109,13 +110,35 @@ function submitUseCaseId() {
             console.error('Error fetching UseCase:', error);
         });
 
+    // close popup
     const overlay = document.getElementById('overlay');
     const popup = document.getElementById('useCaseIdPopup');
     overlay.style.display = 'none';
     popup.style.display = 'none';
 }
-window.submitUseCaseId = submitUseCaseId;
+window.submitUseCaseId = submitUseCaseId;       // export to global scope to use in html
 
+/**
+ * load attributes of an usecase
+ * @param usecases set of usecases, but since usecaseid is unique, set consists of only one usecase
+ */
+function loadUsecase(usecases) {
+    usecases.forEach(usecase => {
+        const titelAnwendungszweckElement =
+            document.getElementById("titelAnwendungszweck");
+        titelAnwendungszweckElement.innerHTML = `${usecase.titel} (#${usecase.id})`;
+
+        const beschreibungAnwendungszweckElement =
+            document.getElementById("beschreibungAnwendungszweck");
+        beschreibungAnwendungszweckElement.innerHTML = usecase.beschreibung;
+
+        orderDefined = usecase.fixed_order === 1;
+    });
+}
+
+/**
+ * subscribe to gps position if available
+ */
 export function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(showPosition);
@@ -124,6 +147,9 @@ export function getLocation() {
     }
 }
 
+/**
+ * initialize map which enables the map to show on screen with appropriate layout
+ */
 export function initializeCentralMap() {
     const mapContainer = document.getElementById('centralMap');
     map = L.map(mapContainer).setView([49.233, 7.0], 13);

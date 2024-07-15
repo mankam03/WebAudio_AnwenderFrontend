@@ -1,5 +1,10 @@
 import * as usecase from './Usecase.js'
 
+
+/**
+ * load the progress of a specific poi by searching for it in browser local storage
+ * @param poi which poi to search for
+ */
 export function loadProgress(poi) {
     const foundPois = JSON.parse(localStorage.getItem(`usecase_${usecase.usecase_id}_foundPois`)) || [];
     if (foundPois.includes(poi.id)) {
@@ -7,6 +12,10 @@ export function loadProgress(poi) {
     }
 }
 
+/**
+ * save the progress of a specific poi by writing it in browser local storage
+ * @param poi which poi to save
+ */
 export function saveProgress(poi) {
     let foundPois = JSON.parse(localStorage.getItem(`usecase_${usecase.usecase_id}_foundPois`)) || [];
     if (poi.found) {
@@ -19,6 +28,9 @@ export function saveProgress(poi) {
     localStorage.setItem(`usecase_${usecase.usecase_id}_foundPois`, JSON.stringify(foundPois));
 }
 
+/**
+ * lists the recently used usecases when asking for an usecase id
+ */
 export function showRecentUsecases() {
     const recentUseCases = JSON.parse(localStorage.getItem('recent_usecases')) || [];
     const recentUseCasesList = document.getElementById('recentUseCasesList');
@@ -39,6 +51,10 @@ export function showRecentUsecases() {
     }
 }
 
+/**
+ * update the recently used usecases list to include the currently used usecase
+ * @param usecase_id which usecaseid to add to the list
+ */
 export function updateRecentUsecases(usecase_id) {
     let recentUseCases = JSON.parse(localStorage.getItem('recent_usecases')) || [];
     recentUseCases = recentUseCases.filter(id => id !== usecase_id);
