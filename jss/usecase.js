@@ -242,7 +242,7 @@ function getAudio() {
             var context = new AudioContext(); // Make it crossbrowser
             var gainNode = context.createGain();
             gainNode.gain.value = 1; // set volume to 100%
-            var playButton = document.getElementById('confirmUsecaseId');
+            var playButton = document.getElementById('openSidebarButton');
             var buffer = void 0;
 
             // The Promise-based syntax for BaseAudioContext.decodeAudioData() is not supported in Safari(Webkit).
