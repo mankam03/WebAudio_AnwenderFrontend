@@ -196,7 +196,7 @@ function initializeWebAudio(poi) {
     // get soundfile from rest api call and get audio element of poi
     const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`);
     if (!audioElement) {
-        alert("Test");
+        console.log(audioElement);
     }
     audioElements[poi.order] = audioElement;
 
