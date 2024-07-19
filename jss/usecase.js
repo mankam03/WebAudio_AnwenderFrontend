@@ -194,8 +194,15 @@ export function loadPois() {
 function initializeWebAudio(poi) {
 
     // get soundfile from rest api call and get audio element of poi
-    const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`);
-    console.log(audioElement);
+    const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
+    fetch(audioUrl)
+        .then(response => {
+            if (!response.ok) {
+                alert("Test");
+                location.reload();
+            }
+        })
+    const audioElement = new Audio(audioUrl);
     audioElements[poi.order] = audioElement;
 
     // get audio context and define panner node settings
