@@ -9,7 +9,7 @@ export const ALERT_CANT_LOAD_POIS = "Points of Interest konnten zu diesem Anwend
 
 
 // Confirm
-export const CONFIRM_RESET_PROGRESS = "Der Fortschritt für diesen Anwendungszweck" +
+export const CONFIRM_RESET_PROGRESS = "Der Fortschritt für diesen Anwendungszweck " +
     "geht für immer verloren. Trotzdem zurücksetzen?";
-export const CONFIRM_DELETE_RECENT_USECASES = "Die zuletzt aufgerufen Anwendungszwecke werden" +
+export const CONFIRM_DELETE_RECENT_USECASES = "Die zuletzt aufgerufen Anwendungszwecke werden " +
     "aus der Liste endgültig entfernt. Trotzdem löschen?";
