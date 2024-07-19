@@ -298,7 +298,7 @@ function togglePoi(poi, label) {
 
     // if status is now active, show circle on map and play audio if user is within the circle
     if (poi.active) {
-        prepareWebAudio(poi);
+        playAudio(poi);
         if (poiCircles[poi.order]) {
             map.addLayer(poiCircles[poi.order]);
         } else {
@@ -319,74 +319,73 @@ function togglePoi(poi, label) {
 }
 
 /**
- * take initial steps before using web audio, e.g. resume audio context
- * @param poi which poi to prepare the web audio for
+ * plays the web audio for a specific poi
+ * @param poi which poi to play the audio for
  */
-function prepareWebAudio(poi) {
+function playAudio(poi) {
 
     // wake up audio context, audio not playing at this point
     audioContexts[poi.order].resume();
     let isPlaying = false;
 
-    // clear current audio interval to avoid web audio duplicates, create new one
-    clearInterval(audioIntervals[poi.order]);
-    audioIntervals[poi.order] = setInterval(() => {
-        checkWebAudio(poi, isPlaying);
-    }, 50);
-}
+    /**
+     * periodically call this function to check if audio should be played right now or paused.
+     * this is necessary since we have many conditions when audio should play:
+     * is poi (still) active? is user (still) within circle? is audio
+     */
+    function playAndPause() {
 
-/**
- * periodically call this function to check if audio should be played right now or paused.
- * this is necessary since we have many "real-time" conditions when audio should play:
- * is poi (still) active? is user (still) within circle? is audio (still) playing or waiting to restart? ...
- */
-function checkWebAudio(poi, isPlaying) {
+        // if gps is available and poi is active...
+        if (userPosition && poi.active) {
 
-    // if gps is available and poi is active...
-    if (userPosition && poi.active) {
+            // calculate distance from user to poi and circle center
+            const distanceToPoi = getDistance(userPosition,
+                [Number(`${poi.x_coordinate}`),
+                    Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
+            const distanceToCircleCenter = getDistance(userPosition,
+                randomCircleCenter[poi.order]) * 1000;
 
-        // calculate distance from user to poi and circle center
-        const distanceToPoi = getDistance(userPosition,
-            [Number(`${poi.x_coordinate}`),
-                Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
-        const distanceToCircleCenter = getDistance(userPosition,
-            randomCircleCenter[poi.order]) * 1000;
+            // if user is within the circle, play audio
+            if (distanceToCircleCenter <= CIRCLE_RADIUS) {
+                if (!isPlaying) {
+                    audioElements[poi.order].play();
+                    isPlaying = true;
 
-        // if user is within the circle, play audio
-        if (distanceToCircleCenter <= CIRCLE_RADIUS) {
-            if (!isPlaying) {
-                audioElements[poi.order].play();
-                isPlaying = true;
+                    // when audio ends, wait for given seconds and restart
+                    audioElements[poi.order].addEventListener('ended', () => {
+                        setTimeout(() => {
+                            audioElements[poi.order].pause();
+                            isPlaying = false;
+                        }, sidebar.loopInterval * 1000);
+                    });
+                }
 
-                // when audio ends, wait for given seconds and restart
-                audioElements[poi.order].addEventListener('ended', () => {
-                    setTimeout(() => {
-                        audioElements[poi.order].pause();
-                        isPlaying = false;
-                    }, sidebar.loopInterval * 1000);
-                });
+                // always update positions and volume
+                updatePannerPosition(poi.order,
+                    [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
+                const maxVolume = 1.0;
+                const minVolume = 0.1;
+                const volume = 1.0 - (distanceToPoi / CIRCLE_RADIUS);
+                audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
+
+                // else, if user leaves circle, stop playing audio
+            } else {
+                audioElements[poi.order].pause();
+                isPlaying = false;
             }
 
-            // always update positions and volume
-            updatePannerPosition(poi.order,
-                [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
-            const maxVolume = 1.0;
-            const minVolume = 0.1;
-            const volume = 1.0 - (distanceToPoi / CIRCLE_RADIUS);
-            audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
-
-            // else, if user leaves circle, stop playing audio
+            // else, if gps is not available or poi is not active anymore, stop playing audio
         } else {
             audioElements[poi.order].pause();
             isPlaying = false;
         }
-
-        // else, if gps is not available or poi is not active anymore, stop playing audio
-    } else {
-        audioElements[poi.order].pause();
-        isPlaying = false;
     }
+
+    // always clear current audio interval to avoid duplicates, always create new one
+    clearInterval(audioIntervals[poi.order]);
+    audioIntervals[poi.order] = setInterval(playAndPause, 50);
 }
+
 
 /**
  * updates the position of the panner according to longitude and latitude
