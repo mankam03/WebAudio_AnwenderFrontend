@@ -73,19 +73,6 @@ li {
     font-weight: bold;
 }
 
-/**
-@media (max-width: 600px) {
-    .container {
-        padding: 10px;
-    }
-    li {
-        padding: 10px;
-    }
-}
- */
-/* media query for mobile devices */
-
-
 .header {
     padding-top: 15px;
     padding-bottom: 15px;
@@ -130,7 +117,7 @@ li {
     line-height: 30px;
 }
 
-#letzteAnwendungezwecke {
+#recentUsecases {
     margin-top: 50px;
 }
 
