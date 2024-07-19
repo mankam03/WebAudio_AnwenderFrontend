@@ -193,7 +193,7 @@ export function loadPois() {
  */
 function initializeWebAudio(poi) {
 
-    // get soundfile from rest api call and get audio element of poi
+    // check if soundfile is available from rest api call and if so, get soundfile and create audio element
     const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
     fetch(audioUrl)
         .then(soundfile => {
