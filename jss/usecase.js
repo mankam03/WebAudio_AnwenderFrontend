@@ -74,7 +74,7 @@ function showPopup() {
  */
 function submitUseCaseId() {
 
-    let test = new Audio('./silence.mp3');
+    let test = new Audio('jss/silence.mp3');
     test.play();
 
     // check if usecase id is given. if not, show popup again
