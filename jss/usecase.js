@@ -199,6 +199,7 @@ function initializeWebAudio(poi) {
     fetch(audioUrl)
         .then(response => {
             if (!response.ok && !alertShown) {
+                alertShown = true;
                 alert("Test");
                 location.reload();
             }
