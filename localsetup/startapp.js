@@ -2,19 +2,19 @@ const express = require("express");
 const path = require("path");
 
 
-// Server konfigurieren
+// configure server
 const app = express();
 const port = 3000;
 
-// Statisches Verzeichnis für öffentliche Dateien
-app.use(express.static(path.join(__dirname, '../..')));
+// location of files
+app.use(express.static(path.join(__dirname, '../')));
 
-// Index.html laden
+// load index.html under route /
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, "../../index.html"));
+    res.sendFile(path.join(__dirname, "../index.html"));
 });
 
-// Server starten
+// start server
 app.listen(port, () => {
     console.log('Anwendung läuft unter http://localhost:3000');
 });

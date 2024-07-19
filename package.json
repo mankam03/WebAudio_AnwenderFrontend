@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": ".\\src\\main\\StartApp.js",
   "scripts": {
-    "start": "node localsetup/StartApp.js"
+    "start": "node localsetup/startapp.js"
   },
   "keywords": [],
   "author": "",
