@@ -13,7 +13,7 @@ export let userPosition;                        // latitude and longitude of the
 export let userMarker;                          // marker at the current user position
 export let pois = [];                     // stores all pois of the usecase
 export let poiCircles = [];               // stores all circles of all pois of the usecase
-export let audioElements = [];            // stores all audio elements of all pois of the usecase
+export let audioBuffer = [];            // stores all audio elements of all pois of the usecase
 export let audioContexts = [];            // stores all audio contexts of all pois of the usecase
 export let audioIntervals = [];           // stores all audio elements of all pois of the usecase
 export let pannerNodes = [];              // stores all panner nodes of all pois of the usecase
@@ -193,22 +193,11 @@ export function loadPois() {
  */
 function initializeWebAudio(poi, label) {
 
-    // check if soundfile is available from rest api call and if so, get soundfile and create audio element
-    const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
-    fetch(audioUrl)
-        .then(soundfile => {
-          if (!soundfile.ok) {
-              alert(messages.ALERT_CANT_LOAD_SOUNDFILES);
-              location.reload();
-          }
-        });
-    const audioElement = new Audio(audioUrl);
-    audioElements[poi.order] = audioElement;
 
 
     (function () {
 
-            var URL = '${SERVER_URL}/soundfiles/${poi.soundfile_id}';
+            var URL = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
 
             var play = function play(audioBuffer) {
                 var source = context.createBufferSource();
@@ -235,17 +224,19 @@ function initializeWebAudio(poi, label) {
                 .then(arrayBuffer => context.decodeAudioData(arrayBuffer,
                     audioBuffer => {
                         buffer = audioBuffer;
+                        audioBuffer[poi.order] = buffer;
                     },
                     error =>
                         console.error(error)
                 ))
 
-            label.onclick = function () {
-                return play(buffer);
-            };
 
             audioContexts[poi.order] = context;
             pannerNodes[poi.order] = pannerNode;
+
+            label.onclick = function () {
+                return play(buffer);
+            };
 
         }
     )();
@@ -350,7 +341,7 @@ function togglePoi(poi, label) {
         }
         // else, if status is now inactive, remove circle on map and stop playing audio
     } else {
-        audioElements[poi.order].pause();
+        audioBuffer[poi.order].pause();
         if (poiCircles[poi.order]) {
             map.removeLayer(poiCircles[poi.order]);
         }
@@ -390,13 +381,13 @@ function playAudio(poi) {
             // if user is within the circle, play audio
             if (distanceToCircleCenter <= CIRCLE_RADIUS) {
                 if (!isPlaying) {
-                    audioElements[poi.order].play();
+                    audioBuffer[poi.order].play();
                     isPlaying = true;
 
                     // when audio ends, wait for given seconds and restart
-                    audioElements[poi.order].addEventListener('ended', () => {
+                    audioBuffer[poi.order].addEventListener('ended', () => {
                         setTimeout(() => {
-                            audioElements[poi.order].pause();
+                            audioBuffer[poi.order].pause();
                             isPlaying = false;
                         }, sidebar.loopInterval * 1000);
                     });
@@ -408,17 +399,17 @@ function playAudio(poi) {
                 const maxVolume = 1.0;
                 const minVolume = 0.1;
                 const volume = 1.0 - (distanceToPoi / CIRCLE_RADIUS);
-                audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
+                audioBuffer[poi.order].volume = Math.max(minVolume, volume * maxVolume);
 
                 // else, if user leaves circle, stop playing audio
             } else {
-                audioElements[poi.order].pause();
+                audioBuffer[poi.order].pause();
                 isPlaying = false;
             }
 
             // else, if gps is not available or poi is not active anymore, stop playing audio
         } else {
-            audioElements[poi.order].pause();
+            audioBuffer[poi.order].pause();
             isPlaying = false;
         }
     }
@@ -567,7 +558,7 @@ function checkUserInProximity(poi, label) {
                 poi.active = false;
                 updatePOIColor(poi, label);
                 map.removeLayer(poiCircles[poi.order]);
-                audioElements[poi.order].pause();
+                audioBuffer[poi.order].pause();
                 storage.saveProgress(poi);
                 updateProgressBar();
                 alert(`${poi.name} gefunden!`);
