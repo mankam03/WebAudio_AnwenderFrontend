@@ -174,7 +174,6 @@ export function loadPois() {
                 poi.found = false;
                 pois.push(poi);
                 addPOIToList(poi, orderDefined);
-                initializeWebAudio(poi);
             });
             updateProgressBar();
             if (orderDefined) {
@@ -190,8 +189,9 @@ export function loadPois() {
 /**
  * initalize web audio for every poi, i.e. create audio context, audio element, nodes, ... for every poi
  * @param poi which poi to initialize
+ * @param label label of poi
  */
-function initializeWebAudio(poi) {
+function initializeWebAudio(poi, label) {
 
     // check if soundfile is available from rest api call and if so, get soundfile and create audio element
     const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
@@ -205,36 +205,15 @@ function initializeWebAudio(poi) {
     const audioElement = new Audio(audioUrl);
     audioElements[poi.order] = audioElement;
 
-    getAudio();
 
-    // get audio context and define panner node settings
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const audioContext = new AudioContext();
-    const pannerNode = audioContext.createPanner();
-    pannerNode.panningModel = 'HRTF';
-    pannerNode.distanceModel = 'linear';
-    pannerNode.maxDistance = CIRCLE_RADIUS;
-    pannerNode.refDistance = 1;
-    pannerNode.rolloffFactor = 3;
-
-    // connect all nodes
-    const source = audioContext.createMediaElementSource(audioElement);
-    source.connect(pannerNode).connect(audioContext.destination);
-
-    // map created audio context and panner node to poi
-    audioContexts[poi.order] = audioContext;
-    pannerNodes[poi.order] = pannerNode;
-}
-
-function getAudio() {
     (function () {
 
-            var URL = '../api/soundfiles/5';
+            var URL = '${SERVER_URL}/soundfiles/${poi.soundfile_id}';
 
             var play = function play(audioBuffer) {
                 var source = context.createBufferSource();
                 source.buffer = audioBuffer;
-                source.connect(context.destination);
+                source.connect(pannerNode).connect(audioContext.destination);
                 source.start();
             };
 
@@ -242,7 +221,12 @@ function getAudio() {
             var context = new AudioContext(); // Make it crossbrowser
             var gainNode = context.createGain();
             gainNode.gain.value = 1; // set volume to 100%
-            var playButton = document.getElementById('openSidebarButton');
+            const pannerNode = context.createPanner();
+            pannerNode.panningModel = 'HRTF';
+            pannerNode.distanceModel = 'linear';
+            pannerNode.maxDistance = CIRCLE_RADIUS;
+            pannerNode.refDistance = 1;
+            pannerNode.rolloffFactor = 3;
             var buffer = void 0;
 
             // The Promise-based syntax for BaseAudioContext.decodeAudioData() is not supported in Safari(Webkit).
@@ -256,12 +240,16 @@ function getAudio() {
                         console.error(error)
                 ))
 
-            playButton.onclick = function () {
+            label.onclick = function () {
                 return play(buffer);
             };
 
+            audioContexts[poi.order] = context;
+            pannerNodes[poi.order] = pannerNode;
+
         }
     )();
+
 }
 
 /**
@@ -326,6 +314,9 @@ function addPOIToList(poi, orderDefined) {
     } else {
         label.innerHTML = `${poi.order}&emsp;${poi.name}`;
     }
+
+    // initialize web audio
+    initializeWebAudio(poi, label)
 
     // add labels to list
     li.appendChild(label);
