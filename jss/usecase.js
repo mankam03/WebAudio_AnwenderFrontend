@@ -174,9 +174,7 @@ export function loadPois() {
                 poi.found = false;
                 pois.push(poi);
                 addPOIToList(poi, orderDefined);
-                if (!initializeWebAudio(poi)) {
-                    alert("Test");
-                }
+                initializeWebAudio(poi);
             });
             updateProgressBar();
             if (orderDefined) {
@@ -196,17 +194,14 @@ export function loadPois() {
 function initializeWebAudio(poi) {
 
     // get soundfile from rest api call and get audio element of poi
-    let errorFetchingSoundfile = false;
     const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
     fetch(audioUrl)
-        .then(response => {
-            if (!response.ok) {
-                errorFetchingSoundfile = true;
+        .then(response => response.json())
+        .then(soundfiles => {
+            if (soundfiles.length <= 0) {
+                alert("Test");
             }
         })
-    if (errorFetchingSoundfile) {
-        return false;
-    }
     const audioElement = new Audio(audioUrl);
     audioElements[poi.order] = audioElement;
 
@@ -227,8 +222,6 @@ function initializeWebAudio(poi) {
     // map created audio context and panner node to poi
     audioContexts[poi.order] = audioContext;
     pannerNodes[poi.order] = pannerNode;
-
-    return true;
 }
 
 /**
