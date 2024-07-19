@@ -197,7 +197,7 @@ function initializeWebAudio(poi) {
     const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
     fetch(audioUrl)
         .then(response => {
-          if (response.ok) {
+          if (!response.ok) {
               alert(messages.ALERT_CANT_LOAD_SOUNDFILES);
               location.reload();
           }
