@@ -266,7 +266,7 @@ function addPOIToList(poi, orderDefined) {
         label.addEventListener('click', function () {
             if (poi.found && !poi.active) {
                 const proceed = confirm
-                (`${poi.name} wurde bereits gefunden. Möchten Sie ihn trotzdem auswählen?`);
+                (`${poi.name} wurde bereits gefunden. Trotzdem auswählen?`);
                 if (proceed) {
                     togglePoi(poi, label);
                 }
