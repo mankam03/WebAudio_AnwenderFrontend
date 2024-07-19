@@ -1,5 +1,6 @@
-import * as sidebar from './Sidebar.js';
-import * as storage from './Storage.js';
+import * as sidebar from './sidebar.js';
+import * as storage from './storage.js';
+import * as messages from './messages.js';
 
 export const SERVER_URL = "../api";       // url of rest api calls
 const CIRCLE_RADIUS = 500;              // radius of circle on map in meters
@@ -73,10 +74,10 @@ function showPopup() {
  */
 function submitUseCaseId() {
 
-    // check if usecase id is given
+    // check if usecase id is given. if not, show popup again
     usecase_id = document.getElementById('useCaseIdInput').value;
     if (usecase_id === '') {
-        alert("Keine Anwendungszwecknummer angegeben");
+        alert(messages.ALERT_NO_USECASE_ID);
         showPopup();
         return;
     }
@@ -86,7 +87,7 @@ function submitUseCaseId() {
         .then(response => response.json())
         .then(usecases => {
             if (usecases.length === 0) {
-                alert("Ungültige Anwendungszwecknummer");
+                alert(messages.ALERT_WRONG_USECASE_ID);
                 showPopup();
                 return;
             }
@@ -106,8 +107,9 @@ function submitUseCaseId() {
             sidebarButton.style.display = 'block';
 
         })
-        .catch(error => {
-            console.error('Error fetching UseCase:', error);
+        .catch(() => {
+            alert(messages.ALERT_CANT_LOAD_USECASE);
+            location.reload();
         });
 
     // close popup
@@ -142,7 +144,8 @@ export function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(showPosition);
     } else {
-        alert("GPS-Daten können in diesem Browser nicht gelesen werden.");
+        alert(messages.ALERT_CANT_LOAD_GPS);
+        location.reload();
     }
 }
 
@@ -178,8 +181,9 @@ export function loadPois() {
                 activateNextUnfoundPoi();
             }
         })
-        .catch(error => {
-            console.error('Error fetching UseCase:', error);
+        .catch(() => {
+            alert(messages.ALERT_CANT_LOAD_POIS)
+            location.reload();
         });
 }
 
@@ -527,7 +531,7 @@ function checkUserInProximity(poi, label) {
                 audioElements[poi.order].pause();
                 storage.saveProgress(poi);
                 updateProgressBar();
-                alert(`Sie haben ${poi.name} gefunden`);
+                alert(`${poi.name} gefunden!`);
                 if (orderDefined) {
                     activateNextUnfoundPoi();
                 }

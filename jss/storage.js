@@ -1,4 +1,4 @@
-import * as usecase from './Usecase.js'
+import * as usecase from './usecase.js'
 
 
 /**

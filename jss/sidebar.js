@@ -1,4 +1,5 @@
-import * as usecase from './Usecase.js'
+import * as usecase from './usecase.js'
+import * as messages from './messages.js'
 
 // default values, always read when opening any usecase
 export let autoAlignMap = true;     // if map should adjust view
@@ -23,9 +24,9 @@ export function toggleSidebar() {
 export function setLoopInterval() {
     const audioInterval = document.getElementById('loopIntervalInput');
     if (audioInterval.value === '') {
-        alert("Es wurde keine Zahl eingegeben.")
+        alert(messages.ALERT_NO_NUMBER);
     } else if (parseInt(audioInterval.value, 10) <= 0) {
-        alert("Das Intervall muss positiv sein.")
+        alert(messages.ALERT_INTERVAL_NOT_POSITIVE);
     } else {
         loopInterval = parseInt(audioInterval.value, 10);
     }
@@ -50,7 +51,7 @@ export function toggleAutoAlignMap() {
  * reset the progress of the user to a specific usecase and reload
  */
 export function resetProgress() {
-    if (confirm("Der Fortschritt für diesen Anwendungszweck geht für immer verloren. Trotzdem zurücksetzen?")) {
+    if (confirm(messages.CONFIRM_RESET_PROGRESS)) {
         localStorage.removeItem(`usecase_${usecase.usecase_id}_foundPois`);
         location.reload();
     }
@@ -60,8 +61,7 @@ export function resetProgress() {
  * delete listed recent usecases that show up when starting the application and reload
  */
 export function deleteRecentUsecases() {
-    if (confirm("Die zuletzt aufgerufen Anwendungszwecke werden aus der Liste endgültig entfernt. " +
-        "Trotzdem löschen?")) {
+    if (confirm(messages.CONFIRM_DELETE_RECENT_USECASES)) {
         localStorage.removeItem('recent_usecases');
         location.reload();
     }
