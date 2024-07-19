@@ -74,9 +74,6 @@ function showPopup() {
  */
 function submitUseCaseId() {
 
-    let test = new Audio(`${SERVER_URL}/soundfiles/5`);
-    test.play();
-
     // check if usecase id is given. if not, show popup again
     usecase_id = document.getElementById('useCaseIdInput').value;
     if (usecase_id === '') {
@@ -209,36 +206,8 @@ function initializeWebAudio(poi) {
     audioElements[poi.order] = audioElement;
 
     // get audio context and define panner node settings
-
-    var audioContext = null, usingWebAudio = true;
-
-    try {
-        if (typeof AudioContext !== 'undefined') {
-            audioContext = new AudioContext();
-        } else if (typeof webkitAudioContext !== 'undefined') {
-            audioContext = new webkitAudioContext();
-        } else {
-            usingWebAudio = false;
-        }
-    } catch(e) {
-        usingWebAudio = false;
-    }
-
-// context state at this time is `undefined` in iOS8 Safari
-    if (usingWebAudio && audioContext.state === 'suspended') {
-        var resume = function () {
-            audioContext.resume();
-
-            setTimeout(function () {
-                if (audioContext.state === 'running') {
-                    document.body.removeEventListener('touchend', resume, false);
-                }
-            }, 0);
-        };
-
-        document.body.addEventListener('touchend', resume, false);
-    }
-
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContext();
     const pannerNode = audioContext.createPanner();
     pannerNode.panningModel = 'HRTF';
     pannerNode.distanceModel = 'linear';
