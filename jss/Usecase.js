@@ -116,7 +116,8 @@ function submitUseCaseId() {
     overlay.style.display = 'none';
     popup.style.display = 'none';
 }
-window.submitUseCaseId = submitUseCaseId;       // export to global scope to use in html
+
+window.submitUseCaseId = submitUseCaseId;       // export to global scope to use in index.html
 
 /**
  * load attributes of an usecase
@@ -160,6 +161,9 @@ export function initializeCentralMap() {
     }).addTo(map);
 }
 
+/**
+ * fetch all pois which belong to usecase and further initialize application, e.g. by initializing web audio
+ */
 export function loadPois() {
     fetch(SERVER_URL + `/usecases/${usecase_id}/pois`)
         .then(response => response.json())
@@ -169,49 +173,58 @@ export function loadPois() {
                 poi.found = false;
                 pois.push(poi);
                 addPOIToList(poi, orderDefined);
-
-                //const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);
-                const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`);
-                audioElements[poi.order] = audioElement;
-
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                const audioContext = new AudioContext();
-                const pannerNode = audioContext.createPanner();
-                pannerNode.panningModel = 'HRTF';
-                pannerNode.distanceModel = 'linear';
-                pannerNode.maxDistance = CIRCLE_RADIUS;
-                pannerNode.refDistance = 1;
-                pannerNode.rolloffFactor = 3;
-
-                const source = audioContext.createMediaElementSource(audioElement);
-                source.connect(pannerNode).connect(audioContext.destination);
-
-                audioContexts[poi.order] = audioContext;
-                pannerNodes[poi.order] = pannerNode;
+                initializeWebAudio(poi);
             });
-
             updateProgressBar();
-
             if (orderDefined) {
                 activateNextUnfoundPoi();
             }
-
         })
         .catch(error => {
             console.error('Error fetching UseCase:', error);
         });
 }
 
+/**
+ * initalize web audio for every poi, i.e. create audioContext, audioElement, nodes, ... for every poi
+ * @param poi which poi to initialize
+ */
+function initializeWebAudio(poi) {
+    //const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);
+    const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`);
+    audioElements[poi.order] = audioElement;
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContext();
+    const pannerNode = audioContext.createPanner();
+    pannerNode.panningModel = 'HRTF';
+    pannerNode.distanceModel = 'linear';
+    pannerNode.maxDistance = CIRCLE_RADIUS;
+    pannerNode.refDistance = 1;
+    pannerNode.rolloffFactor = 3;
+
+    const source = audioContext.createMediaElementSource(audioElement);
+    source.connect(pannerNode).connect(audioContext.destination);
+
+    audioContexts[poi.order] = audioContext;
+    pannerNodes[poi.order] = pannerNode;
+}
+
+/**
+ * update the progress bar to always show in % how many percent of pois are found
+ */
 function updateProgressBar() {
     const totalPois = pois.length;
     const visitedPois = pois.filter(poi => poi.found).length;
     const progress = (visitedPois / totalPois) * 100;
-
     const progressBar = document.getElementById("progressBar");
     progressBar.style.width = `${progress}%`;
     progressBar.textContent = `${Math.round(progress)}%`;
 }
 
+/**
+ * if order is given, auto selects the next poi if previous poi is found
+ */
 function activateNextUnfoundPoi() {
     for (let poi of pois) {
         if (!poi.found) {
@@ -227,13 +240,21 @@ function activateNextUnfoundPoi() {
     }
 }
 
+/**
+ * add all fetched pois to list with different functionality, depending whether order is defined or not
+ * @param poi which poi to add next to the list
+ * @param orderDefined if usecases defines order in which user must find pois
+ */
 function addPOIToList(poi, orderDefined) {
+
+    // before adding pois to list, load which pois has previously been found
     storage.loadProgress(poi);
 
     const poiList = document.getElementById('poiList');
     const li = document.createElement('li');
-
     const label = document.createElement('label');
+
+    // if no order is defined, make pois clickable and do not show order number left to poi name
     if (!orderDefined) {
         label.innerHTML = `${poi.name}`;
         label.addEventListener('click', function () {
@@ -247,19 +268,32 @@ function addPOIToList(poi, orderDefined) {
                 activatePoi(poi, label);
             }
         });
+        // else, if order is defined, do not make pois clickable and show order number left to poi name
     } else {
         label.innerHTML = `${poi.order}&emsp;${poi.name}`;
     }
 
-    updatePOIColor(poi, label);
-    checkUserInProximity(poi, label);
+    // add labels to list
     li.appendChild(label);
     poiList.appendChild(li);
+
+    // further initialize application with appropriate function calls
+    updatePOIColor(poi, label);
+    checkUserInProximity(poi, label);
 }
 
+/**
+ * activate (or deactivate) a poi, i.e. show circle on map and play audio if user is within the circle
+ * @param poi which poi to activate
+ * @param label label of the poi
+ */
 function activatePoi(poi, label) {
+
+    // toggle status between activate und deactivate
     poi.active = !poi.active;
     updatePOIColor(poi, label);
+
+    // if status is now active, show circle on map and play audio if user is within the circle
     if (poi.active) {
         playAudio(poi);
         if (poiCircles[poi.order]) {
@@ -269,12 +303,15 @@ function activatePoi(poi, label) {
                 [Number(`${poi.x_coordinate}`),
                     Number(`${poi.y_coordinate}`)], CIRCLE_RADIUS, poi.name);
         }
+        // else, if status is now inactive, remove circle on map and stop playing audio
     } else {
         audioElements[poi.order].pause();
         if (poiCircles[poi.order]) {
             map.removeLayer(poiCircles[poi.order]);
         }
     }
+
+    // always adjusts the map so user marker and all circles are always seen (can be turned off in sidebar)
     adjustViewToIncludeAllCircles();
 }
 
