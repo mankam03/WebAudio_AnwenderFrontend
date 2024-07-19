@@ -174,7 +174,8 @@ export function loadPois() {
                 const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`);
                 audioElements[poi.order] = audioElement;
 
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioContext = new AudioContext();
                 const pannerNode = audioContext.createPanner();
                 pannerNode.panningModel = 'HRTF';
                 pannerNode.distanceModel = 'linear';
