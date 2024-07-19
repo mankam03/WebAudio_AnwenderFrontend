@@ -199,6 +199,7 @@ function initializeWebAudio(poi) {
     try {
         audioElement = fetch(audioUrl);
     } catch(error) {
+        console.log("HIER FEHLER")
         alert("RIP")
         return;
     }
