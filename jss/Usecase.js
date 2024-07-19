@@ -17,6 +17,7 @@ export let audioContexts = [];
 export let pannerNodes = [];
 export let randomCircleCenter = [];
 export let audioIntervals = [];
+window.submitUseCaseId = submitUseCaseId;               // export function to global scope to use in index.html
 
 
 /**
@@ -117,8 +118,6 @@ function submitUseCaseId() {
     popup.style.display = 'none';
 }
 
-window.submitUseCaseId = submitUseCaseId;       // export to global scope to use in index.html
-
 /**
  * load attributes of an usecase
  * @param usecases set of usecases, but since usecaseid is unique, set consists of only one usecase
@@ -190,10 +189,12 @@ export function loadPois() {
  * @param poi which poi to initialize
  */
 function initializeWebAudio(poi) {
-    //const audioElement = new Audio(`/src/main/${poi.soundfile_id}.mp3`);
+
+    // get soundfile from rest api call and get audio element of poi
     const audioElement = new Audio(`${SERVER_URL}/soundfiles/${poi.soundfile_id}`);
     audioElements[poi.order] = audioElement;
 
+    // get audio context and define panner node settings
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioContext = new AudioContext();
     const pannerNode = audioContext.createPanner();
@@ -203,9 +204,11 @@ function initializeWebAudio(poi) {
     pannerNode.refDistance = 1;
     pannerNode.rolloffFactor = 3;
 
+    // connect all nodes
     const source = audioContext.createMediaElementSource(audioElement);
     source.connect(pannerNode).connect(audioContext.destination);
 
+    // map created audio context and panner node to poi
     audioContexts[poi.order] = audioContext;
     pannerNodes[poi.order] = pannerNode;
 }
@@ -283,8 +286,8 @@ function addPOIToList(poi, orderDefined) {
 }
 
 /**
- * activate (or deactivate) a poi, i.e. show circle on map and play audio if user is within the circle
- * @param poi which poi to activate
+ * toggles a poi, i.e. show/hide circle on map and play/pause audio if user is within/out of the circle
+ * @param poi which poi to toggle
  * @param label label of the poi
  */
 function activatePoi(poi, label) {
@@ -301,7 +304,7 @@ function activatePoi(poi, label) {
         } else {
             poiCircles[poi.order] = drawCircle(poi.order,
                 [Number(`${poi.x_coordinate}`),
-                    Number(`${poi.y_coordinate}`)], CIRCLE_RADIUS, poi.name);
+                    Number(`${poi.y_coordinate}`)], poi.name);
         }
         // else, if status is now inactive, remove circle on map and stop playing audio
     } else {
@@ -311,25 +314,44 @@ function activatePoi(poi, label) {
         }
     }
 
-    // always adjusts the map so user marker and all circles are always seen (can be turned off in sidebar)
+    // adjusts the map so user marker and all circles are always seen (can be turned off in sidebar)
     adjustViewToIncludeAllCircles();
 }
 
+/**
+ * plays the web audio for a specific poi
+ * @param poi which poi to play the audio for
+ */
 function playAudio(poi) {
+
+    // wake up audio context, audio not playing at this point
     audioContexts[poi.order].resume();
     let isPlaying = false;
 
+    /**
+     * periodically call this function to check if audio should be played right now or paused.
+     * this is necessary since we have many conditions when audio should play:
+     * is poi (still) active? is user (still) within circle? is audio
+     */
     function playAndPause() {
+
+        // if gps is available and poi is active...
         if (userPosition && poi.active) {
+
+            // calculate distance from user to poi and circle center
             const distanceToPoi = getDistance(userPosition,
                 [Number(`${poi.x_coordinate}`),
                     Number(`${poi.y_coordinate}`)]) * 1000; // convert to meters
-            const distanceToCircleCenter = getDistance(userPosition, randomCircleCenter[poi.order]) * 1000;
+            const distanceToCircleCenter = getDistance(userPosition,
+                randomCircleCenter[poi.order]) * 1000;
 
+            // if user is within the circle, play audio
             if (distanceToCircleCenter <= CIRCLE_RADIUS) {
                 if (!isPlaying) {
                     audioElements[poi.order].play();
                     isPlaying = true;
+
+                    // when audio ends, wait for given seconds and restart
                     audioElements[poi.order].addEventListener('ended', () => {
                         setTimeout(() => {
                             audioElements[poi.order].pause();
@@ -338,35 +360,50 @@ function playAudio(poi) {
                     });
                 }
 
+                // always update positions and volume
                 updatePannerPosition(poi.order,
                     [Number(`${poi.x_coordinate}`), Number(`${poi.y_coordinate}`)]);
-
                 const maxVolume = 1.0;
                 const minVolume = 0.1;
                 const volume = 1.0 - (distanceToPoi / CIRCLE_RADIUS);
                 audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
+
+                // else, if user leaves circle, stop playing audio
             } else {
                 audioElements[poi.order].pause();
                 isPlaying = false;
             }
+
+            // else, if gps is not available or poi is not active anymore, stop playing audio
         } else {
             audioElements[poi.order].pause();
             isPlaying = false;
         }
     }
 
+    // always clear current audio interval to avoid duplicates, always create new one
     clearInterval(audioIntervals[poi.order]);
     audioIntervals[poi.order] = setInterval(playAndPause, 50);
 }
 
+/**
+ * updates the position of the panner according to longitude and latitude
+ * @param order order number of the poi whose panner node should be updated
+ * @param poiPosition position of the poi
+ */
 function updatePannerPosition(order, poiPosition) {
     if (userPosition && pannerNodes[order]) {
-        const x = poiPosition[1] - userPosition[1]; // longitude difference
-        const z = userPosition[0] - poiPosition[0]; // latitude difference
-        pannerNodes[order].setPosition(x, 0, z);
+        const longitudeDifference = poiPosition[1] - userPosition[1];
+        const latitudeDifference = userPosition[0] - poiPosition[0];
+        pannerNodes[order].setPosition(longitudeDifference, 0, latitudeDifference);
     }
 }
 
+/**
+ * update the label color of a poi in the poi list, e.g. green if poi has been found
+ * @param poi which poi to update
+ * @param label label of the poi to update
+ */
 function updatePOIColor(poi, label) {
     if (poi.active) {
         label.style.color = "blue";
@@ -377,22 +414,34 @@ function updatePOIColor(poi, label) {
     }
 }
 
-function drawCircle(poi_order, center, radius, poi_name) {
-    const randomizedCoordinates = getRandomizedCoordinates(center, radius);
+/**
+ * draws a random circle on the map. the poi is guaranteed to always be within the circle.
+ * @param poi_order to which order number random corrdinates of circle should be mapped to
+ * @param center coordinates of the poi, is the intiial center
+ * @param poi_name poi name (shows when you click on circle when using map)
+ * @returns the created circle with randomized center
+ */
+function drawCircle(poi_order, center, poi_name) {
+    const randomizedCoordinates = getRandomizedCoordinates(center);
     const circle = L.circle(randomizedCoordinates, {
         color: 'blue',
         fillColor: '#30f',
         fillOpacity: 0.2,
-        radius: radius
+        radius: CIRCLE_RADIUS
     }).addTo(map);
     circle.bindPopup(poi_name);
     randomCircleCenter[poi_order] = randomizedCoordinates;
     return circle;
 }
 
-function getRandomizedCoordinates(center, radius) {
+/**
+ * calculate random coordinates within a circle, which is defined by center and radius
+ * @param center center of the circle, longitude and latitude
+ * @returns {*[]}
+ */
+function getRandomizedCoordinates(center) {
     const angle = Math.random() * 2 * Math.PI;
-    const distance = Math.random() * radius;
+    const distance = Math.random() * CIRCLE_RADIUS;
 
     const earthRadius = 6371000;
     const dLat = distance / earthRadius;
@@ -409,9 +458,8 @@ function showPosition(position) {
     if (userMarker) {
         userMarker.setLatLng(userPosition);
     } else {
-        userMarker = L.marker(userPosition).addTo(map).bindPopup('Ihre Position');
+        userMarker = L.marker(userPosition).addTo(map).bindPopup('Aktueller Standort');
     }
-
     adjustViewToIncludeAllCircles();
 }
 
@@ -459,7 +507,7 @@ function getDistance(coord1, coord2) {
     const lat2 = coord2[0];
     const lon2 = coord2[1];
 
-    const R = 6371; // radius of the Earth in km
+    const R = 6371; // radius of the earth in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
