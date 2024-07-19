@@ -205,6 +205,8 @@ function initializeWebAudio(poi) {
     const audioElement = new Audio(audioUrl);
     audioElements[poi.order] = audioElement;
 
+    getAudio();
+
     // get audio context and define panner node settings
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioContext = new AudioContext();
@@ -222,6 +224,48 @@ function initializeWebAudio(poi) {
     // map created audio context and panner node to poi
     audioContexts[poi.order] = audioContext;
     pannerNodes[poi.order] = pannerNode;
+}
+
+function getAudio() {
+    (function () {
+
+            // Check if the browser supports web audio. Safari wants a prefix.
+            if ('AudioContext' in window || 'webkitAudioContext' in window) {
+
+                var URL = '../api/soundfiles/5';
+
+                var play = function play(audioBuffer) {
+                    var source = context.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(context.destination);
+                    source.start();
+                };
+
+                var AudioContext = window.AudioContext || window.webkitAudioContext;
+                var context = new AudioContext(); // Make it crossbrowser
+                var gainNode = context.createGain();
+                gainNode.gain.value = 1; // set volume to 100%
+                var playButton = document.getElementById('confirmUsecaseId');
+                var buffer = void 0;
+
+                // The Promise-based syntax for BaseAudioContext.decodeAudioData() is not supported in Safari(Webkit).
+                window.fetch(URL)
+                    .then(response => response.arrayBuffer())
+                    .then(arrayBuffer => context.decodeAudioData(arrayBuffer,
+                        audioBuffer => {
+                            buffer = audioBuffer;
+                        },
+                        error =>
+                            console.error(error)
+                    ))
+
+                playButton.onclick = function () {
+                    return play(buffer);
+                };
+
+            }
+        }
+    )();
 }
 
 /**
