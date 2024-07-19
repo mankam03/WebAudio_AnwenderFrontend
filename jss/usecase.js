@@ -202,7 +202,7 @@ function initializeWebAudio(poi, label) {
             var play = function play(audioBuffer) {
                 var source = context.createBufferSource();
                 source.buffer = audioBuffer;
-                source.connect(pannerNode).connect(audioContext.destination);
+                source.connect(pannerNode).connect(context.destination);
                 source.start();
             };
 
