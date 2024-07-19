@@ -198,6 +198,7 @@ function initializeWebAudio(poi) {
     fetch(audioUrl)
         .then(response => response.json())
         .then(data => {
+            console.log(data);
             if (data.length <= 0) {
                 alert("Test")
             }
