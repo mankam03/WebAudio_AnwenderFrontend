@@ -188,7 +188,7 @@ export function loadPois() {
 }
 
 /**
- * initalize web audio for every poi, i.e. create audioContext, audioElement, nodes, ... for every poi
+ * initalize web audio for every poi, i.e. create audio context, audio element, nodes, ... for every poi
  * @param poi which poi to initialize
  */
 function initializeWebAudio(poi) {
@@ -206,8 +206,36 @@ function initializeWebAudio(poi) {
     audioElements[poi.order] = audioElement;
 
     // get audio context and define panner node settings
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const audioContext = new AudioContext();
+
+    var audioContext = null, usingWebAudio = true;
+
+    try {
+        if (typeof AudioContext !== 'undefined') {
+            audioContext = new AudioContext();
+        } else if (typeof webkitAudioContext !== 'undefined') {
+            audioContext = new webkitAudioContext();
+        } else {
+            usingWebAudio = false;
+        }
+    } catch(e) {
+        usingWebAudio = false;
+    }
+
+// context state at this time is `undefined` in iOS8 Safari
+    if (usingWebAudio && audioContext.state === 'suspended') {
+        var resume = function () {
+            audioContext.resume();
+
+            setTimeout(function () {
+                if (audioContext.state === 'running') {
+                    document.body.removeEventListener('touchend', resume, false);
+                }
+            }, 0);
+        };
+
+        document.body.addEventListener('touchend', resume, false);
+    }
+
     const pannerNode = audioContext.createPanner();
     pannerNode.panningModel = 'HRTF';
     pannerNode.distanceModel = 'linear';
