@@ -1,23 +1,23 @@
 import * as sidebar from './Sidebar.js';
 import * as storage from './Storage.js';
 
-export const SERVER_URL = "../api";        // url of rest api calls
-const CIRCLE_RADIUS = 500;               // radius of circle on map in meters
-const PROXIMITY_RADIUS = 20 / 1000;      // first number: how near in meters user must be to trigger found poi
+export const SERVER_URL = "../api";       // url of rest api calls
+const CIRCLE_RADIUS = 500;              // radius of circle on map in meters
+const PROXIMITY_RADIUS = 20 / 1000;     // first number: how near in meters user must be to trigger found poi
 
-export let usecase_id;
-export let orderDefined;
-export let map;
-export let userPosition;
-export let userMarker;
-export let poiCircles = {};
-export let pois = [];
-export let audioElements = [];
-export let audioContexts = [];
-export let pannerNodes = [];
-export let randomCircleCenter = [];
-export let audioIntervals = [];
-window.submitUseCaseId = submitUseCaseId;               // export function to global scope to use in index.html
+export let usecase_id;                          // id of the usecase
+export let orderDefined;                        // if pois should be visited in order
+export let map;                                 // openstreetmaps
+export let userPosition;                        // latitude and longitude of the user
+export let userMarker;                          // marker at the current user position
+export let pois = [];                     // stores all pois of the usecase
+export let poiCircles = [];               // stores all circles of all pois of the usecase
+export let audioElements = [];            // stores all audio elements of all pois of the usecase
+export let audioContexts = [];            // stores all audio contexts of all pois of the usecase
+export let audioIntervals = [];           // stores all audio elements of all pois of the usecase
+export let pannerNodes = [];              // stores all panner nodes of all pois of the usecase
+export let randomCircleCenter = [];       // stores all randomly calculated coordinates of the circles
+window.submitUseCaseId = submitUseCaseId;       // export function to global scope to use in index.html
 
 
 /**
@@ -66,7 +66,6 @@ function showPopup() {
         useCaseIdInput.value = storedUseCaseId;
     }
     storage.showRecentUsecases();
-
 }
 
 /**
@@ -459,7 +458,6 @@ function getRandomizedCoordinates(center) {
  * @param position where to draw the user marker, latitude and longitude
  */
 function showPosition(position) {
-
     userPosition = [position.coords.latitude, position.coords.longitude];
 
     // if user marker already exists, only update position
