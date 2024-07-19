@@ -200,7 +200,7 @@ function initializeWebAudio(poi) {
         audioElement = fetch(audioUrl);
     } catch(error) {
         alert("RIP")
-        location.reload()
+        return;
     }
 
     audioElements[poi.order] = audioElement;
