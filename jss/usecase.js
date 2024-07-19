@@ -1,7 +1,6 @@
 import * as sidebar from './sidebar.js';
 import * as storage from './storage.js';
 import * as messages from './messages.js';
-import {response} from "express";
 
 export const SERVER_URL = "../api";       // url of rest api calls
 const CIRCLE_RADIUS = 500;              // radius of circle on map in meters
@@ -196,6 +195,13 @@ function initializeWebAudio(poi) {
 
     // get soundfile from rest api call and get audio element of poi
     const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
+    fetch(audioUrl)
+        .then(response => {
+            if (!response.ok) {
+                alert("Test");
+                location.reload();
+            }
+        })
     const audioElement = new Audio(audioUrl);
     audioElements[poi.order] = audioElement;
 
