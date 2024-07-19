@@ -6,6 +6,7 @@ export const ALERT_WRONG_USECASE_ID = "Es existiert kein Anwendungszweck mit die
 export const ALERT_CANT_LOAD_USECASE = "Anwendungszweck konnte nicht geladen werden.";
 export const ALERT_CANT_LOAD_GPS = "GPS-Daten können in diesem Browser nicht gelesen werden."
 export const ALERT_CANT_LOAD_POIS = "Points of Interest konnten zu diesem Anwendungszweck nicht geladen werden."
+export const ALERT_CANT_LOAD_SOUNDFILES = "Audiodateien konnten zu diesem Anwendungszweck nicht geladen werden."
 
 
 // Confirm
