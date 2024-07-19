@@ -196,11 +196,10 @@ function initializeWebAudio(poi) {
     // get soundfile from rest api call and get audio element of poi
     const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
     fetch(audioUrl)
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            if (data.length <= 0) {
-                alert("Test")
+        .then(response => {
+            if (!response.ok) {
+                alert("Test");
+                location.reload();
             }
         })
     const audioElement = new Audio(audioUrl);
