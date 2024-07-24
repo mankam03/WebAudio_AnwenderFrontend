@@ -13,7 +13,7 @@ export let userPosition;                        // latitude and longitude of the
 export let userMarker;                          // marker at the current user position
 export let pois = [];                     // stores all pois of the usecase
 export let poiCircles = [];               // stores all circles of all pois of the usecase
-export let audioBuffer = [];            // stores all audio elements of all pois of the usecase
+export let audioElements = [];            // stores all audio elements of all pois of the usecase
 export let audioContexts = [];            // stores all audio contexts of all pois of the usecase
 export let audioIntervals = [];           // stores all audio elements of all pois of the usecase
 export let pannerNodes = [];              // stores all panner nodes of all pois of the usecase
@@ -174,6 +174,7 @@ export function loadPois() {
                 poi.found = false;
                 pois.push(poi);
                 addPOIToList(poi, orderDefined);
+                initializeWebAudio(poi);
             });
             updateProgressBar();
             if (orderDefined) {
@@ -189,58 +190,38 @@ export function loadPois() {
 /**
  * initalize web audio for every poi, i.e. create audio context, audio element, nodes, ... for every poi
  * @param poi which poi to initialize
- * @param label label of poi
  */
-function initializeWebAudio(poi, label) {
+function initializeWebAudio(poi) {
 
+    // check if soundfile is available from rest api call and if so, get soundfile and create audio element
+    const audioUrl = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
+    fetch(audioUrl)
+        .then(soundfile => {
+            if (!soundfile.ok) {
+                alert(messages.ALERT_CANT_LOAD_SOUNDFILES);
+                location.reload();
+            }
+        });
+    const audioElement = new Audio(audioUrl);
+    audioElements[poi.order] = audioElement;
 
+    // get audio context and define panner node settings
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContext();
+    const pannerNode = audioContext.createPanner();
+    pannerNode.panningModel = 'HRTF';
+    pannerNode.distanceModel = 'linear';
+    pannerNode.maxDistance = CIRCLE_RADIUS;
+    pannerNode.refDistance = 1;
+    pannerNode.rolloffFactor = 3;
 
-    (function () {
+    // connect all nodes
+    const source = audioContext.createMediaElementSource(audioElement);
+    source.connect(pannerNode).connect(audioContext.destination);
 
-            var URL = `${SERVER_URL}/soundfiles/${poi.soundfile_id}`;
-
-            var play = function play(audioBuffer) {
-                var source = context.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(pannerNode).connect(context.destination);
-                source.start();
-            };
-
-            var AudioContext = window.AudioContext || window.webkitAudioContext;
-            var context = new AudioContext(); // Make it crossbrowser
-            var gainNode = context.createGain();
-            gainNode.gain.value = 1; // set volume to 100%
-            const pannerNode = context.createPanner();
-            pannerNode.panningModel = 'HRTF';
-            pannerNode.distanceModel = 'linear';
-            pannerNode.maxDistance = CIRCLE_RADIUS;
-            pannerNode.refDistance = 1;
-            pannerNode.rolloffFactor = 3;
-            var buffer = void 0;
-
-            // The Promise-based syntax for BaseAudioContext.decodeAudioData() is not supported in Safari(Webkit).
-            window.fetch(URL)
-                .then(response => response.arrayBuffer())
-                .then(arrayBuffer => context.decodeAudioData(arrayBuffer,
-                    audioBuffer => {
-                        buffer = audioBuffer;
-                        audioBuffer[poi.order] = buffer;
-                    },
-                    error =>
-                        console.error(error)
-                ))
-
-
-            audioContexts[poi.order] = context;
-            pannerNodes[poi.order] = pannerNode;
-
-            label.onclick = function () {
-                return play(buffer);
-            };
-
-        }
-    )();
-
+    // map created audio context and panner node to poi
+    audioContexts[poi.order] = audioContext;
+    pannerNodes[poi.order] = pannerNode;
 }
 
 /**
@@ -306,9 +287,6 @@ function addPOIToList(poi, orderDefined) {
         label.innerHTML = `${poi.order}&emsp;${poi.name}`;
     }
 
-    // initialize web audio
-    initializeWebAudio(poi, label)
-
     // add labels to list
     li.appendChild(label);
     poiList.appendChild(li);
@@ -341,7 +319,7 @@ function togglePoi(poi, label) {
         }
         // else, if status is now inactive, remove circle on map and stop playing audio
     } else {
-        audioBuffer[poi.order].pause();
+        audioElements[poi.order].pause();
         if (poiCircles[poi.order]) {
             map.removeLayer(poiCircles[poi.order]);
         }
@@ -381,13 +359,13 @@ function playAudio(poi) {
             // if user is within the circle, play audio
             if (distanceToCircleCenter <= CIRCLE_RADIUS) {
                 if (!isPlaying) {
-                    audioBuffer[poi.order].play();
+                    audioElements[poi.order].play();
                     isPlaying = true;
 
                     // when audio ends, wait for given seconds and restart
-                    audioBuffer[poi.order].addEventListener('ended', () => {
+                    audioElements[poi.order].addEventListener('ended', () => {
                         setTimeout(() => {
-                            audioBuffer[poi.order].pause();
+                            audioElements[poi.order].pause();
                             isPlaying = false;
                         }, sidebar.loopInterval * 1000);
                     });
@@ -399,17 +377,17 @@ function playAudio(poi) {
                 const maxVolume = 1.0;
                 const minVolume = 0.1;
                 const volume = 1.0 - (distanceToPoi / CIRCLE_RADIUS);
-                audioBuffer[poi.order].volume = Math.max(minVolume, volume * maxVolume);
+                audioElements[poi.order].volume = Math.max(minVolume, volume * maxVolume);
 
                 // else, if user leaves circle, stop playing audio
             } else {
-                audioBuffer[poi.order].pause();
+                audioElements[poi.order].pause();
                 isPlaying = false;
             }
 
             // else, if gps is not available or poi is not active anymore, stop playing audio
         } else {
-            audioBuffer[poi.order].pause();
+            audioElements[poi.order].pause();
             isPlaying = false;
         }
     }
@@ -558,7 +536,7 @@ function checkUserInProximity(poi, label) {
                 poi.active = false;
                 updatePOIColor(poi, label);
                 map.removeLayer(poiCircles[poi.order]);
-                audioBuffer[poi.order].pause();
+                audioElements[poi.order].pause();
                 storage.saveProgress(poi);
                 updateProgressBar();
                 alert(`${poi.name} gefunden!`);
