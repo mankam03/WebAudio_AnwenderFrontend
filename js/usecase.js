@@ -108,7 +108,7 @@ function submitUseCaseId() {
             const hint = document.getElementById('hint');
             progressContainer.style.display = 'block';
             sidebarButton.style.display = 'block';
-            hint.style.display = 'block';
+            hint.style.display = 'flex';
 
         })
         .catch(() => {
