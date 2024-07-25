@@ -137,3 +137,9 @@ li {
 #recentUseCasesList li:hover {
     background-color: #f0f0f0;
 }
+
+#hint {
+    display: flex;
+    justify-content: center;
+}
+
