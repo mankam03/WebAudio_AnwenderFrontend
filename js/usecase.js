@@ -56,9 +56,11 @@ function showPopup() {
     const overlay = document.getElementById('overlay');
     const popup = document.getElementById('useCaseIdPopup');
     const progressContainer = document.getElementById('progressContainer');
+    const hint = document.getElementById('hint')
     overlay.style.display = 'block';
     popup.style.display = 'block';
     progressContainer.style.display = 'none';
+    hint.style.display = 'none';
 
     // if available in local storage, auto fill last recently used usecase id in text field
     const storedUseCaseId = localStorage.getItem('current_usecase_id');
@@ -103,8 +105,10 @@ function submitUseCaseId() {
             // show previosly hidden elements again
             const progressContainer = document.getElementById('progressContainer');
             const sidebarButton = document.getElementById('openSidebarButton');
+            const hint = document.getElementById('hint');
             progressContainer.style.display = 'block';
             sidebarButton.style.display = 'block';
+            hint.style.display = 'block';
 
         })
         .catch(() => {
