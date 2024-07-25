@@ -172,7 +172,7 @@ export function loadPois() {
             data.forEach(poi => {
                 poi.active = false;
                 poi.found = false;
-                pois.push(poi);
+                pois[poi.order] = poi;
                 addPOIToList(poi, orderDefined);
                 initializeWebAudio(poi);
             });
